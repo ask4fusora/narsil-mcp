@@ -187,9 +187,9 @@ impl WasmCodeIntel {
             .iter()
             .filter(|s| {
                 // Pattern filter
-                let pattern_match = pattern.as_ref().is_none_or(|p| {
-                    s.name.to_lowercase().contains(&p.to_lowercase())
-                });
+                let pattern_match = pattern
+                    .as_ref()
+                    .is_none_or(|p| s.name.to_lowercase().contains(&p.to_lowercase()));
 
                 // Kind filter
                 let kind_match = kind_filter.as_ref().is_none_or(|k| &s.kind == k);
@@ -304,9 +304,10 @@ impl WasmCodeIntel {
     /// JSON representation of the symbol or null if not found
     #[wasm_bindgen]
     pub fn symbol_at(&self, path: &str, line: usize) -> Option<String> {
-        let symbol = self.symbols.iter().find(|s| {
-            s.file_path == path && s.start_line <= line && s.end_line >= line
-        })?;
+        let symbol = self
+            .symbols
+            .iter()
+            .find(|s| s.file_path == path && s.start_line <= line && s.end_line >= line)?;
 
         serde_json::to_string(symbol).ok()
     }

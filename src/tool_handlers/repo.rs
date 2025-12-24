@@ -69,7 +69,11 @@ impl ToolHandler for GetExcerptHandler {
         let path = args.get_str("path").unwrap_or("");
         let lines: Vec<usize> = args
             .get_array("lines")
-            .map(|arr| arr.iter().filter_map(|v| v.as_u64().map(|n| n as usize)).collect())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_u64().map(|n| n as usize))
+                    .collect()
+            })
             .unwrap_or_default();
         let config = ExcerptConfig {
             context_before: args.get_u64_or("context_before", 5) as usize,

@@ -53,7 +53,10 @@ fn bench_hybrid_search(c: &mut Criterion) {
 
     group.bench_function("tfidf_only", |b| {
         b.iter(|| {
-            tfidf_similarity_search(black_box(&corpus), black_box("fn authenticate(user: &User)"))
+            tfidf_similarity_search(
+                black_box(&corpus),
+                black_box("fn authenticate(user: &User)"),
+            )
         });
     });
 
@@ -227,7 +230,12 @@ fn bm25_search(corpus: &SearchCorpus, query: &str) -> Vec<(String, f64)> {
     let n = corpus.documents.len() as f64;
     let k1 = 1.2;
     let b = 0.75;
-    let avg_dl = corpus.documents.iter().map(|d| d.tokens.len()).sum::<usize>() as f64 / n;
+    let avg_dl = corpus
+        .documents
+        .iter()
+        .map(|d| d.tokens.len())
+        .sum::<usize>() as f64
+        / n;
 
     let mut scores: Vec<(String, f64)> = corpus
         .documents
@@ -240,7 +248,8 @@ fn bm25_search(corpus: &SearchCorpus, query: &str) -> Vec<(String, f64)> {
                     let tf = *doc.term_freqs.get(term).unwrap_or(&0) as f64;
                     let df = *corpus.term_document_freqs.get(term).unwrap_or(&0) as f64;
                     let idf = ((n - df + 0.5) / (df + 0.5) + 1.0).ln();
-                    let tf_component = (tf * (k1 + 1.0)) / (tf + k1 * (1.0 - b + b * (dl / avg_dl)));
+                    let tf_component =
+                        (tf * (k1 + 1.0)) / (tf + k1 * (1.0 - b + b * (dl / avg_dl)));
                     idf * tf_component
                 })
                 .sum();
@@ -366,7 +375,10 @@ fn find_symbol_exact<'a>(symbols: &'a [Symbol], name: &str) -> Option<&'a Symbol
 }
 
 fn find_symbol_prefix<'a>(symbols: &'a [Symbol], prefix: &str) -> Vec<&'a Symbol> {
-    symbols.iter().filter(|s| s.name.starts_with(prefix)).collect()
+    symbols
+        .iter()
+        .filter(|s| s.name.starts_with(prefix))
+        .collect()
 }
 
 fn find_symbol_fuzzy<'a>(symbols: &'a [Symbol], query: &str) -> Vec<&'a Symbol> {

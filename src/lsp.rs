@@ -675,7 +675,10 @@ mod tests {
             ..Default::default()
         };
         let manager = LspManager::new(config, vec![]);
-        assert!(manager.is_enabled(), "LSP should be enabled when config says so");
+        assert!(
+            manager.is_enabled(),
+            "LSP should be enabled when config says so"
+        );
     }
 
     #[tokio::test]

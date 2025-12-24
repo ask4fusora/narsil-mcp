@@ -294,7 +294,10 @@ impl FileWatcher {
 
                     // Filter to source files
                     if is_source_file(&path) {
-                        changes.push(FileChange { path: path.to_path_buf(), change_type });
+                        changes.push(FileChange {
+                            path: path.to_path_buf(),
+                            change_type,
+                        });
                     }
                 }
             }
@@ -321,7 +324,10 @@ impl FileWatcher {
                 };
 
                 if is_source_file(&path) {
-                    changes.push(FileChange { path: path.to_path_buf(), change_type });
+                    changes.push(FileChange {
+                        path: path.to_path_buf(),
+                        change_type,
+                    });
                 }
             }
         }

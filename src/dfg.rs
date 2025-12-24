@@ -409,7 +409,10 @@ impl<'a> DfgAnalyzer<'a> {
                 current_ident.push(c);
             } else {
                 if !current_ident.is_empty()
-                    && current_ident.chars().next().is_some_and(|c| c.is_lowercase())
+                    && current_ident
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_lowercase())
                     && !is_keyword(&current_ident)
                     && !is_type_constructor(&current_ident)
                 {
@@ -426,7 +429,10 @@ impl<'a> DfgAnalyzer<'a> {
 
         // Don't forget last identifier
         if !current_ident.is_empty()
-            && current_ident.chars().next().is_some_and(|c| c.is_lowercase())
+            && current_ident
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_lowercase())
             && !is_keyword(&current_ident)
             && !is_type_constructor(&current_ident)
         {
@@ -519,10 +525,7 @@ impl<'a> DfgAnalyzer<'a> {
                 .map(|u| u.variable.clone())
                 .collect();
 
-            facts.use_before_def = block_uses
-                .difference(&facts.defined)
-                .cloned()
-                .collect();
+            facts.use_before_def = block_uses.difference(&facts.defined).cloned().collect();
         }
 
         while let Some(block_id) = worklist.pop_front() {
@@ -549,7 +552,12 @@ impl<'a> DfgAnalyzer<'a> {
             let new_live_in: HashSet<VarId> = use_before_def
                 .iter()
                 .cloned()
-                .chain(new_live_out.iter().filter(|v| !defined.contains(*v)).cloned())
+                .chain(
+                    new_live_out
+                        .iter()
+                        .filter(|v| !defined.contains(*v))
+                        .cloned(),
+                )
                 .collect();
 
             if let Some(facts) = self.block_facts.get_mut(&block_id) {
@@ -576,8 +584,7 @@ impl<'a> DfgAnalyzer<'a> {
                 .uses
                 .iter()
                 .filter(|u| {
-                    u.variable == def.id.variable
-                        && self.definition_reaches_use(&def.id, u)
+                    u.variable == def.id.variable && self.definition_reaches_use(&def.id, u)
                 })
                 .cloned()
                 .collect();
@@ -629,10 +636,9 @@ impl<'a> DfgAnalyzer<'a> {
             }
 
             // Check if any definition of this variable reaches this use
-            let has_reaching_def = self
-                .definitions
-                .iter()
-                .any(|d| d.id.variable == use_.variable && self.definition_reaches_use(&d.id, use_));
+            let has_reaching_def = self.definitions.iter().any(|d| {
+                d.id.variable == use_.variable && self.definition_reaches_use(&d.id, use_)
+            });
 
             if !has_reaching_def {
                 uninitialized.push(use_.clone());
@@ -727,9 +733,7 @@ impl<'a> DfgAnalyzer<'a> {
         }
 
         // Check if RHS is a simple identifier
-        if rhs
-            .chars()
-            .all(|c| c.is_alphanumeric() || c == '_')
+        if rhs.chars().all(|c| c.is_alphanumeric() || c == '_')
             && rhs
                 .chars()
                 .next()
@@ -772,16 +776,46 @@ fn is_copy_type(var_name: &str) -> bool {
         || name_lower == "len"
         || name_lower == "size"
         || name_lower == "offset"
-        || name_lower == "result"  // Often bool or numeric result
+        || name_lower == "result" // Often bool or numeric result
 }
 
 fn is_keyword(s: &str) -> bool {
     matches!(
         s,
-        "let" | "mut" | "fn" | "if" | "else" | "while" | "for" | "loop" | "match" | "return"
-            | "break" | "continue" | "struct" | "enum" | "impl" | "trait" | "pub" | "use"
-            | "mod" | "const" | "static" | "type" | "where" | "async" | "await" | "move"
-            | "ref" | "self" | "Self" | "super" | "crate" | "true" | "false" | "in"
+        "let"
+            | "mut"
+            | "fn"
+            | "if"
+            | "else"
+            | "while"
+            | "for"
+            | "loop"
+            | "match"
+            | "return"
+            | "break"
+            | "continue"
+            | "struct"
+            | "enum"
+            | "impl"
+            | "trait"
+            | "pub"
+            | "use"
+            | "mod"
+            | "const"
+            | "static"
+            | "type"
+            | "where"
+            | "async"
+            | "await"
+            | "move"
+            | "ref"
+            | "self"
+            | "Self"
+            | "super"
+            | "crate"
+            | "true"
+            | "false"
+            | "in"
     )
 }
 
@@ -803,11 +837,7 @@ fn is_type_constructor(s: &str) -> bool {
 }
 
 /// Analyze data flow for all functions in a file
-pub fn analyze_file(
-    tree: &Tree,
-    source: &str,
-    file_path: &str,
-) -> Result<Vec<DataFlowAnalysis>> {
+pub fn analyze_file(tree: &Tree, source: &str, file_path: &str) -> Result<Vec<DataFlowAnalysis>> {
     // First build CFGs
     let cfgs = crate::cfg::analyze_function(tree, source, file_path)?;
 
@@ -1185,7 +1215,9 @@ mod tests {
         let result = analyzer.analyze();
 
         // x should be used and not dead
-        assert!(result.dead_stores.is_empty() || !result.dead_stores.iter().any(|d| d.variable == "x"));
+        assert!(
+            result.dead_stores.is_empty() || !result.dead_stores.iter().any(|d| d.variable == "x")
+        );
     }
 
     #[test]
@@ -1195,7 +1227,9 @@ mod tests {
 
         // Initialize
         for &block_id in cfg.blocks.keys() {
-            analyzer.block_facts.insert(block_id, BlockDataFlow::default());
+            analyzer
+                .block_facts
+                .insert(block_id, BlockDataFlow::default());
         }
 
         // After liveness, y should be live at entry of block 1 (exit)
@@ -1513,11 +1547,17 @@ mod tests {
         assert!(
             result.definitions.iter().any(|d| d.id.variable == "value"),
             "Pattern binding 'value' should create a definition, found: {:?}",
-            result.definitions.iter().map(|d| &d.id.variable).collect::<Vec<_>>()
+            result
+                .definitions
+                .iter()
+                .map(|d| &d.id.variable)
+                .collect::<Vec<_>>()
         );
 
         // Definition should be of kind PatternBinding
-        let value_def = result.definitions.iter()
+        let value_def = result
+            .definitions
+            .iter()
             .find(|d| d.id.variable == "value")
             .expect("Should find value definition");
         assert_eq!(value_def.kind, DefKind::PatternBinding);
@@ -1534,7 +1574,9 @@ mod tests {
             label: "entry".to_string(),
             start_line: 1,
             end_line: 1,
-            terminator: Terminator::Branch { condition: "opt".to_string() },
+            terminator: Terminator::Branch {
+                condition: "opt".to_string(),
+            },
             statements: vec![Statement {
                 line: 1,
                 kind: StatementKind::ControlFlow,
@@ -1593,7 +1635,8 @@ mod tests {
         let result = analyzer.analyze();
 
         // 'x' should NOT appear in uninitialized uses since it's defined by the pattern
-        let uninit_vars: Vec<&str> = result.uninitialized_uses
+        let uninit_vars: Vec<&str> = result
+            .uninitialized_uses
             .iter()
             .map(|u| u.variable.as_str())
             .collect();
@@ -1631,14 +1674,13 @@ mod tests {
         let mut analyzer = DfgAnalyzer::new(&cfg, "");
         let result = analyzer.analyze();
 
-        let use_vars: Vec<&str> = result.uses
-            .iter()
-            .map(|u| u.variable.as_str())
-            .collect();
+        let use_vars: Vec<&str> = result.uses.iter().map(|u| u.variable.as_str()).collect();
 
         // Type constructors should NOT appear as uses
         assert!(
-            !use_vars.iter().any(|&v| v == "Some" || v == "None" || v == "Ok" || v == "Err"),
+            !use_vars
+                .iter()
+                .any(|&v| v == "Some" || v == "None" || v == "Ok" || v == "Err"),
             "Type constructors should be filtered. Uses found: {:?}",
             use_vars
         );
@@ -1737,7 +1779,8 @@ mod tests {
         );
 
         // 'item' should NOT be uninitialized
-        let uninit_vars: Vec<&str> = result.uninitialized_uses
+        let uninit_vars: Vec<&str> = result
+            .uninitialized_uses
             .iter()
             .map(|u| u.variable.as_str())
             .collect();
@@ -1793,7 +1836,8 @@ mod tests {
         );
 
         // Neither should be uninitialized
-        let uninit_vars: Vec<&str> = result.uninitialized_uses
+        let uninit_vars: Vec<&str> = result
+            .uninitialized_uses
             .iter()
             .map(|u| u.variable.as_str())
             .collect();

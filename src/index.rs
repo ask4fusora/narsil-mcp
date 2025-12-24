@@ -171,8 +171,7 @@ impl CodeIntelEngine {
                 Ok(engine) => {
                     info!(
                         "Neural embedding engine initialized (backend={}, model={:?})",
-                        options.neural_config.backend,
-                        options.neural_config.model_name
+                        options.neural_config.backend, options.neural_config.model_name
                     );
                     Some(Arc::new(engine))
                 }
@@ -486,8 +485,12 @@ impl CodeIntelEngine {
         // Batch index neural embeddings if enabled
         if let Some(ref neural) = self.neural_engine {
             if !neural_docs.is_empty() {
-                info!("Generating neural embeddings for {} symbols...", neural_docs.len());
-                let items: Vec<(crate::neural::NeuralDocument,)> = neural_docs.into_iter().map(|d| (d,)).collect();
+                info!(
+                    "Generating neural embeddings for {} symbols...",
+                    neural_docs.len()
+                );
+                let items: Vec<(crate::neural::NeuralDocument,)> =
+                    neural_docs.into_iter().map(|d| (d,)).collect();
                 if let Err(e) = neural.index_batch(&items) {
                     warn!("Failed to batch index neural embeddings: {}", e);
                 } else {
@@ -1754,7 +1757,10 @@ impl CodeIntelEngine {
                 if contributors.is_empty() {
                     output.push_str("*No contributors found.*\n");
                 } else {
-                    output.push_str(&format!("**Total contributors**: {}\n\n", contributors.len()));
+                    output.push_str(&format!(
+                        "**Total contributors**: {}\n\n",
+                        contributors.len()
+                    ));
                     for (name, count) in contributors {
                         output.push_str(&format!("- {} ({} commits)\n", name, count));
                     }
@@ -1885,8 +1891,7 @@ impl CodeIntelEngine {
             if self.neural_engine.is_some() {
                 format!(
                     "enabled (backend={}, model={:?})",
-                    self.options.neural_config.backend,
-                    self.options.neural_config.model_name
+                    self.options.neural_config.backend, self.options.neural_config.model_name
                 )
             } else {
                 "disabled".to_string()
@@ -2775,26 +2780,21 @@ impl CodeIntelEngine {
     // ==================== Control Flow Graph (CFG) Tools ====================
 
     /// Get control flow graph for a specific function
-    pub async fn get_control_flow(
-        &self,
-        repo: &str,
-        path: &str,
-        function: &str,
-    ) -> Result<String> {
+    pub async fn get_control_flow(&self, repo: &str, path: &str, function: &str) -> Result<String> {
         let repo_meta = self
             .repos
             .get(repo)
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
 
         // Parse the file
         let parsed = self.parser.parse_file(&full_path, &content)?;
 
         // Get the tree (required for CFG analysis)
-        let tree = parsed.tree
+        let tree = parsed
+            .tree
             .as_ref()
             .ok_or_else(|| anyhow!("Failed to parse file"))?;
 
@@ -2823,11 +2823,11 @@ impl CodeIntelEngine {
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
 
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree
+        let tree = parsed
+            .tree
             .as_ref()
             .ok_or_else(|| anyhow!("Failed to parse file"))?;
         let cfgs = cfg::analyze_function(tree, &content, path)?;
@@ -2877,23 +2877,18 @@ impl CodeIntelEngine {
     // ==================== Data Flow Graph (DFG) Tools ====================
 
     /// Get data flow analysis for a specific function
-    pub async fn get_data_flow(
-        &self,
-        repo: &str,
-        path: &str,
-        function: &str,
-    ) -> Result<String> {
+    pub async fn get_data_flow(&self, repo: &str, path: &str, function: &str) -> Result<String> {
         let repo_meta = self
             .repos
             .get(repo)
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
 
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree
+        let tree = parsed
+            .tree
             .as_ref()
             .ok_or_else(|| anyhow!("Failed to parse file"))?;
         let analyses = dfg::analyze_file(tree, &content, path)?;
@@ -2920,11 +2915,11 @@ impl CodeIntelEngine {
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
 
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree
+        let tree = parsed
+            .tree
             .as_ref()
             .ok_or_else(|| anyhow!("Failed to parse file"))?;
         let cfgs = cfg::analyze_function(tree, &content, path)?;
@@ -2938,10 +2933,7 @@ impl CodeIntelEngine {
         let analysis = analyzer.analyze();
 
         let mut output = String::new();
-        output.push_str(&format!(
-            "# Reaching Definitions: `{}`\n\n",
-            function
-        ));
+        output.push_str(&format!("# Reaching Definitions: `{}`\n\n", function));
         output.push_str(&format!("**File**: `{}`\n\n", path));
 
         output.push_str("## Def-Use Chains\n\n");
@@ -2956,10 +2948,7 @@ impl CodeIntelEngine {
             } else {
                 output.push_str("**Reaches**:\n");
                 for use_ in &chain.uses {
-                    output.push_str(&format!(
-                        "- Line {}: {:?}\n",
-                        use_.line, use_.kind
-                    ));
+                    output.push_str(&format!("- Line {}: {:?}\n", use_.line, use_.kind));
                 }
                 output.push('\n');
             }
@@ -2981,17 +2970,20 @@ impl CodeIntelEngine {
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
 
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree
+        let tree = parsed
+            .tree
             .as_ref()
             .ok_or_else(|| anyhow!("Failed to parse file"))?;
         let analyses = dfg::analyze_file(tree, &content, path)?;
 
         let mut output = String::new();
-        output.push_str(&format!("# Uninitialized Variable Analysis: `{}`\n\n", path));
+        output.push_str(&format!(
+            "# Uninitialized Variable Analysis: `{}`\n\n",
+            path
+        ));
 
         let mut total_issues = 0;
 
@@ -3042,11 +3034,11 @@ impl CodeIntelEngine {
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
 
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree
+        let tree = parsed
+            .tree
             .as_ref()
             .ok_or_else(|| anyhow!("Failed to parse file"))?;
         let analyses = dfg::analyze_file(tree, &content, path)?;
@@ -3101,9 +3093,9 @@ impl CodeIntelEngine {
         mode: &str,
     ) -> Result<String> {
         use crate::chunking::AstChunker;
+        use crate::embeddings::EmbeddingEngine;
         use crate::hybrid_search::create_hybrid_engine;
         use crate::search::ConcurrentSearchIndex;
-        use crate::embeddings::EmbeddingEngine;
         use std::sync::Arc;
 
         // Create search engines
@@ -3159,15 +3151,8 @@ impl CodeIntelEngine {
         output.push_str(&format!("**Results**: {}\n\n", results.len()));
 
         for (i, result) in results.iter().enumerate() {
-            output.push_str(&format!(
-                "## {}. {}\n",
-                i + 1,
-                result.file_path
-            ));
-            output.push_str(&format!(
-                "- **Score**: {:.4}\n",
-                result.score
-            ));
+            output.push_str(&format!("## {}. {}\n", i + 1, result.file_path));
+            output.push_str(&format!("- **Score**: {:.4}\n", result.score));
             output.push_str(&format!(
                 "- **Lines**: {}-{}\n",
                 result.start_line, result.end_line
@@ -3293,20 +3278,29 @@ impl CodeIntelEngine {
         for (i, (chunk, score)) in all_chunks.iter().enumerate() {
             output.push_str(&format!("## {}. {}\n", i + 1, chunk.id));
             output.push_str(&format!("- **File**: {}\n", chunk.file_path));
-            output.push_str(&format!("- **Lines**: {}-{}\n", chunk.start_line, chunk.end_line));
+            output.push_str(&format!(
+                "- **Lines**: {}-{}\n",
+                chunk.start_line, chunk.end_line
+            ));
             output.push_str(&format!("- **Type**: {}\n", chunk.chunk_type));
             output.push_str(&format!("- **Score**: {:.2}\n", score));
 
             if let Some(ref ctx) = chunk.symbol_context {
                 output.push_str(&format!("- **Symbol**: `{}` ({:?})\n", ctx.name, ctx.kind));
                 if let Some(ref sig) = ctx.signature {
-                    output.push_str(&format!("- **Signature**: `{}`\n", sig.chars().take(100).collect::<String>()));
+                    output.push_str(&format!(
+                        "- **Signature**: `{}`\n",
+                        sig.chars().take(100).collect::<String>()
+                    ));
                 }
             }
 
             if let Some(ref doc) = chunk.doc_comment {
                 let doc_preview: String = doc.lines().take(2).collect::<Vec<_>>().join(" ");
-                output.push_str(&format!("- **Doc**: {}\n", doc_preview.chars().take(80).collect::<String>()));
+                output.push_str(&format!(
+                    "- **Doc**: {}\n",
+                    doc_preview.chars().take(80).collect::<String>()
+                ));
             }
 
             output.push_str("\n```\n");
@@ -3340,8 +3334,7 @@ impl CodeIntelEngine {
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
 
         let config = ChunkerConfig {
             include_context: include_imports,
@@ -3354,9 +3347,15 @@ impl CodeIntelEngine {
         let mut output = String::new();
         output.push_str(&format!("# Code Chunks: `{}`\n\n", path));
         output.push_str(&format!("**Total chunks**: {}\n", stats.total_chunks));
-        output.push_str(&format!("**Avg lines/chunk**: {:.1}\n", stats.avg_chunk_lines));
+        output.push_str(&format!(
+            "**Avg lines/chunk**: {:.1}\n",
+            stats.avg_chunk_lines
+        ));
         output.push_str(&format!("**Max chunk lines**: {}\n", stats.max_chunk_lines));
-        output.push_str(&format!("**Min chunk lines**: {}\n\n", stats.min_chunk_lines));
+        output.push_str(&format!(
+            "**Min chunk lines**: {}\n\n",
+            stats.min_chunk_lines
+        ));
 
         output.push_str("## Chunk Types:\n");
         for (chunk_type, count) in &stats.by_type {
@@ -3365,15 +3364,25 @@ impl CodeIntelEngine {
         output.push('\n');
 
         for (i, chunk) in chunks.iter().enumerate() {
-            output.push_str(&format!("---\n\n## Chunk {} ({})\n", i + 1, chunk.chunk_type));
-            output.push_str(&format!("**Lines**: {}-{}\n", chunk.start_line, chunk.end_line));
+            output.push_str(&format!(
+                "---\n\n## Chunk {} ({})\n",
+                i + 1,
+                chunk.chunk_type
+            ));
+            output.push_str(&format!(
+                "**Lines**: {}-{}\n",
+                chunk.start_line, chunk.end_line
+            ));
 
             if let Some(ref ctx) = chunk.symbol_context {
                 output.push_str(&format!("**Symbol**: `{}` ({:?})\n", ctx.name, ctx.kind));
             }
 
             if !chunk.imports.is_empty() && include_imports {
-                output.push_str(&format!("**Imports**: {} statements\n", chunk.imports.len()));
+                output.push_str(&format!(
+                    "**Imports**: {} statements\n",
+                    chunk.imports.len()
+                ));
             }
 
             output.push_str("\n```\n");
@@ -3420,9 +3429,15 @@ impl CodeIntelEngine {
         output.push_str(&format!("# Chunk Statistics: `{}`\n\n", repo));
         output.push_str(&format!("**Files processed**: {}\n", file_count));
         output.push_str(&format!("**Total chunks**: {}\n", stats.total_chunks));
-        output.push_str(&format!("**Avg lines/chunk**: {:.1}\n", stats.avg_chunk_lines));
+        output.push_str(&format!(
+            "**Avg lines/chunk**: {:.1}\n",
+            stats.avg_chunk_lines
+        ));
         output.push_str(&format!("**Max chunk lines**: {}\n", stats.max_chunk_lines));
-        output.push_str(&format!("**Min chunk lines**: {}\n\n", stats.min_chunk_lines));
+        output.push_str(&format!(
+            "**Min chunk lines**: {}\n\n",
+            stats.min_chunk_lines
+        ));
 
         output.push_str("## Chunks by Type:\n\n");
         output.push_str("| Type | Count | Percentage |\n");
@@ -3453,14 +3468,32 @@ impl CodeIntelEngine {
 
         output.push_str("## TF-IDF Embeddings\n\n");
         output.push_str(&format!("- **Documents indexed**: {}\n", doc_count));
-        output.push_str(&format!("- **Total docs in IDF**: {}\n", tfidf_stats.total_docs));
-        output.push_str(&format!("- **Vocabulary size**: {}\n", tfidf_stats.vocab_size));
-        output.push_str(&format!("- **Embedding dimension**: {}\n", tfidf_stats.dimension));
+        output.push_str(&format!(
+            "- **Total docs in IDF**: {}\n",
+            tfidf_stats.total_docs
+        ));
+        output.push_str(&format!(
+            "- **Vocabulary size**: {}\n",
+            tfidf_stats.vocab_size
+        ));
+        output.push_str(&format!(
+            "- **Embedding dimension**: {}\n",
+            tfidf_stats.dimension
+        ));
 
         output.push_str("\n## BM25 Search Index\n\n");
-        output.push_str(&format!("- **Documents indexed**: {}\n", search_stats.total_documents));
-        output.push_str(&format!("- **Total terms**: {}\n", search_stats.total_terms));
-        output.push_str(&format!("- **Avg doc length**: {:.1} tokens\n", search_stats.avg_doc_length));
+        output.push_str(&format!(
+            "- **Documents indexed**: {}\n",
+            search_stats.total_documents
+        ));
+        output.push_str(&format!(
+            "- **Total terms**: {}\n",
+            search_stats.total_terms
+        ));
+        output.push_str(&format!(
+            "- **Avg doc length**: {:.1} tokens\n",
+            search_stats.avg_doc_length
+        ));
 
         output.push_str("\n## Document Types:\n\n");
         output.push_str("| Type | Count |\n");
@@ -3487,7 +3520,8 @@ impl CodeIntelEngine {
         let include_all = vuln_types.contains(&"all".to_string()) || vuln_types.is_empty();
 
         // Get files to analyze - supports both file and directory paths
-        let files_to_analyze: Vec<std::path::PathBuf> = self.file_cache
+        let files_to_analyze: Vec<std::path::PathBuf> = self
+            .file_cache
             .iter()
             .filter(|entry| entry.key().starts_with(&repo_path))
             .filter(|entry| {
@@ -3530,10 +3564,14 @@ impl CodeIntelEngine {
         // Filter and aggregate results
         let mut total_vulns = 0;
         let mut output = String::new();
-        output.push_str(&format!("# Injection Vulnerability Analysis: {}\n\n", repo_name));
+        output.push_str(&format!(
+            "# Injection Vulnerability Analysis: {}\n\n",
+            repo_name
+        ));
 
         // Aggregate statistics
-        let mut by_type: std::collections::HashMap<String, Vec<crate::taint::TaintFlow>> = std::collections::HashMap::new();
+        let mut by_type: std::collections::HashMap<String, Vec<crate::taint::TaintFlow>> =
+            std::collections::HashMap::new();
 
         for result in &all_results {
             for vuln in &result.vulnerabilities {
@@ -3557,7 +3595,10 @@ impl CodeIntelEngine {
 
         // Summary
         output.push_str("## Summary\n\n");
-        output.push_str(&format!("- **Files Analyzed**: {}\n", files_to_analyze.len()));
+        output.push_str(&format!(
+            "- **Files Analyzed**: {}\n",
+            files_to_analyze.len()
+        ));
         output.push_str(&format!("- **Vulnerabilities Found**: {}\n\n", total_vulns));
 
         if total_vulns == 0 {
@@ -3603,16 +3644,12 @@ impl CodeIntelEngine {
     }
 
     /// Trace taint flow from a specific source location
-    pub async fn trace_taint(
-        &self,
-        repo_name: &str,
-        path: &str,
-        line: usize,
-    ) -> Result<String> {
+    pub async fn trace_taint(&self, repo_name: &str, path: &str, line: usize) -> Result<String> {
         let repo_path = self.get_repo_path(repo_name)?;
         let full_path = validate_path(&repo_path, path)?;
 
-        let content = self.file_cache
+        let content = self
+            .file_cache
             .get(&full_path)
             .map(|entry| entry.value().clone())
             .ok_or_else(|| anyhow!("File not found: {}", path))?;
@@ -3623,13 +3660,17 @@ impl CodeIntelEngine {
         output.push_str(&format!("# Taint Trace: {}:{}\n\n", path, line));
 
         // Find flows that start near this line
-        let relevant_flows: Vec<_> = result.flows
+        let relevant_flows: Vec<_> = result
+            .flows
             .iter()
             .filter(|f| f.source.line == line || (f.source.line as i64 - line as i64).abs() <= 3)
             .collect();
 
         if relevant_flows.is_empty() {
-            output.push_str(&format!("No taint sources found at or near line {}.\n\n", line));
+            output.push_str(&format!(
+                "No taint sources found at or near line {}.\n\n",
+                line
+            ));
 
             // Show nearby sources
             if !result.sources.is_empty() {
@@ -3646,7 +3687,10 @@ impl CodeIntelEngine {
             return Ok(output);
         }
 
-        output.push_str(&format!("Found {} taint flows from this location:\n\n", relevant_flows.len()));
+        output.push_str(&format!(
+            "Found {} taint flows from this location:\n\n",
+            relevant_flows.len()
+        ));
 
         for (i, flow) in relevant_flows.iter().enumerate() {
             output.push_str(&format!("## Flow {}\n\n", i + 1));
@@ -3670,7 +3714,8 @@ impl CodeIntelEngine {
         let mut all_sources: Vec<crate::taint::TaintSource> = Vec::new();
 
         // Get files to analyze - supports both file and directory paths
-        let files_to_analyze: Vec<std::path::PathBuf> = self.file_cache
+        let files_to_analyze: Vec<std::path::PathBuf> = self
+            .file_cache
             .iter()
             .filter(|entry| entry.key().starts_with(&repo_path))
             .filter(|entry| {
@@ -3710,11 +3755,21 @@ impl CodeIntelEngine {
                 for source in result.sources {
                     // Filter by type
                     let type_match = match &source.kind {
-                        crate::taint::SourceKind::UserInput { .. } => source_types.contains(&"user_input".to_string()),
-                        crate::taint::SourceKind::FileRead => source_types.contains(&"file_read".to_string()),
-                        crate::taint::SourceKind::DatabaseQuery => source_types.contains(&"database".to_string()),
-                        crate::taint::SourceKind::Environment => source_types.contains(&"environment".to_string()),
-                        crate::taint::SourceKind::Network => source_types.contains(&"network".to_string()),
+                        crate::taint::SourceKind::UserInput { .. } => {
+                            source_types.contains(&"user_input".to_string())
+                        }
+                        crate::taint::SourceKind::FileRead => {
+                            source_types.contains(&"file_read".to_string())
+                        }
+                        crate::taint::SourceKind::DatabaseQuery => {
+                            source_types.contains(&"database".to_string())
+                        }
+                        crate::taint::SourceKind::Environment => {
+                            source_types.contains(&"environment".to_string())
+                        }
+                        crate::taint::SourceKind::Network => {
+                            source_types.contains(&"network".to_string())
+                        }
                         _ => true,
                     };
 
@@ -3727,7 +3782,10 @@ impl CodeIntelEngine {
 
         let mut output = String::new();
         output.push_str(&format!("# Taint Sources: {}\n\n", repo_name));
-        output.push_str(&format!("**Total sources found**: {}\n\n", all_sources.len()));
+        output.push_str(&format!(
+            "**Total sources found**: {}\n\n",
+            all_sources.len()
+        ));
 
         if all_sources.is_empty() {
             output.push_str("No taint sources found matching the criteria.\n");
@@ -3735,7 +3793,8 @@ impl CodeIntelEngine {
         }
 
         // Group by type
-        let mut by_type: std::collections::HashMap<String, Vec<&crate::taint::TaintSource>> = std::collections::HashMap::new();
+        let mut by_type: std::collections::HashMap<String, Vec<&crate::taint::TaintSource>> =
+            std::collections::HashMap::new();
         for source in &all_sources {
             let type_name = source.kind.display_name();
             by_type.entry(type_name).or_default().push(source);
@@ -3769,11 +3828,14 @@ impl CodeIntelEngine {
         let mut total_vulns = 0;
         let mut total_sanitized = 0;
 
-        let mut vuln_by_severity: std::collections::HashMap<crate::taint::Severity, usize> = std::collections::HashMap::new();
-        let mut vuln_by_type: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let mut vuln_by_severity: std::collections::HashMap<crate::taint::Severity, usize> =
+            std::collections::HashMap::new();
+        let mut vuln_by_type: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
 
         // Analyze all supported files
-        let files: Vec<(std::path::PathBuf, Arc<String>)> = self.file_cache
+        let files: Vec<(std::path::PathBuf, Arc<String>)> = self
+            .file_cache
             .iter()
             .filter(|entry| entry.key().starts_with(&repo_path))
             .filter(|entry| {
@@ -3807,7 +3869,9 @@ impl CodeIntelEngine {
                     }
 
                     if let Some(ref vuln_kind) = flow.vulnerability {
-                        *vuln_by_type.entry(vuln_kind.display_name().to_string()).or_insert(0) += 1;
+                        *vuln_by_type
+                            .entry(vuln_kind.display_name().to_string())
+                            .or_insert(0) += 1;
                     }
                 }
             }
@@ -3817,9 +3881,17 @@ impl CodeIntelEngine {
         output.push_str(&format!("# Security Summary: {}\n\n", repo_name));
 
         // Risk assessment
-        let risk_level = if vuln_by_severity.get(&crate::taint::Severity::Critical).unwrap_or(&0) > &0 {
+        let risk_level = if vuln_by_severity
+            .get(&crate::taint::Severity::Critical)
+            .unwrap_or(&0)
+            > &0
+        {
             "🔴 CRITICAL"
-        } else if vuln_by_severity.get(&crate::taint::Severity::High).unwrap_or(&0) > &0 {
+        } else if vuln_by_severity
+            .get(&crate::taint::Severity::High)
+            .unwrap_or(&0)
+            > &0
+        {
             "🟠 HIGH"
         } else if total_vulns > 0 {
             "🟡 MEDIUM"
@@ -3872,10 +3944,14 @@ impl CodeIntelEngine {
             // Recommendations
             output.push_str("## Recommendations\n\n");
             if vuln_by_type.contains_key("SQL Injection") {
-                output.push_str("- **SQL Injection**: Use parameterized queries or prepared statements\n");
+                output.push_str(
+                    "- **SQL Injection**: Use parameterized queries or prepared statements\n",
+                );
             }
             if vuln_by_type.contains_key("Cross-Site Scripting (XSS)") {
-                output.push_str("- **XSS**: Sanitize user input and use proper encoding for HTML output\n");
+                output.push_str(
+                    "- **XSS**: Sanitize user input and use proper encoding for HTML output\n",
+                );
             }
             if vuln_by_type.contains_key("Command Injection") {
                 output.push_str("- **Command Injection**: Avoid shell execution or use strict input validation\n");
@@ -3899,6 +3975,7 @@ impl CodeIntelEngine {
     ///
     /// Phase C2: Added `max_findings` and `offset` parameters for pagination.
     /// This helps bound output size for large codebases.
+    #[allow(clippy::too_many_arguments)]
     pub async fn scan_security(
         &self,
         repo_name: &str,
@@ -3967,7 +4044,11 @@ impl CodeIntelEngine {
         output.push_str(&format!("**Files Scanned**: {}\n", files.len()));
         output.push_str(&format!(
             "**Test Files**: {}\n",
-            if exclude_tests { "excluded" } else { "included" }
+            if exclude_tests {
+                "excluded"
+            } else {
+                "included"
+            }
         ));
         if let Some(ref tags) = ruleset_tags {
             output.push_str(&format!("**Ruleset Filter**: {}\n", tags.join(", ")));
@@ -4011,11 +4092,7 @@ impl CodeIntelEngine {
     }
 
     /// Scan for OWASP Top 10 vulnerabilities
-    pub async fn check_owasp_top10(
-        &self,
-        repo_name: &str,
-        path: Option<&str>,
-    ) -> Result<String> {
+    pub async fn check_owasp_top10(&self, repo_name: &str, path: Option<&str>) -> Result<String> {
         use crate::security_rules::SecurityRulesEngine;
 
         let repo_path = self.get_repo_path(repo_name)?;
@@ -4058,11 +4135,7 @@ impl CodeIntelEngine {
     }
 
     /// Scan for CWE Top 25 vulnerabilities
-    pub async fn check_cwe_top25(
-        &self,
-        repo_name: &str,
-        path: Option<&str>,
-    ) -> Result<String> {
+    pub async fn check_cwe_top25(&self, repo_name: &str, path: Option<&str>) -> Result<String> {
         use crate::security_rules::SecurityRulesEngine;
 
         let repo_path = self.get_repo_path(repo_name)?;
@@ -4170,7 +4243,8 @@ impl CodeIntelEngine {
         // Look up by CWE
         if let Some(cwe_id) = cwe {
             // Find rules that match this CWE
-            let matching_rules: Vec<_> = engine.get_rules()
+            let matching_rules: Vec<_> = engine
+                .get_rules()
                 .into_iter()
                 .filter(|r| r.cwe.iter().any(|c| c.contains(cwe_id)))
                 .collect();
@@ -4180,7 +4254,10 @@ impl CodeIntelEngine {
 
                 // Add CWE reference
                 let cwe_num = cwe_id.trim_start_matches("CWE-");
-                output.push_str(&format!("**Reference**: https://cwe.mitre.org/data/definitions/{}.html\n\n", cwe_num));
+                output.push_str(&format!(
+                    "**Reference**: https://cwe.mitre.org/data/definitions/{}.html\n\n",
+                    cwe_num
+                ));
 
                 output.push_str("## Related Rules\n\n");
                 for rule in &matching_rules {
@@ -4221,7 +4298,8 @@ impl CodeIntelEngine {
         let engine = SecurityRulesEngine::new();
 
         // Get file content
-        let content = self.file_cache
+        let content = self
+            .file_cache
             .get(&full_path)
             .map(|entry| entry.value().clone())
             .ok_or_else(|| anyhow!("File not found: {}", path))?;
@@ -4266,7 +4344,11 @@ impl CodeIntelEngine {
                 output.push_str(&format!("**General Guidance**: {}\n", f.remediation));
             } else {
                 for (i, fix) in fixes.iter().enumerate() {
-                    output.push_str(&format!("### Option {} (Confidence: {:?})\n\n", i + 1, fix.confidence));
+                    output.push_str(&format!(
+                        "### Option {} (Confidence: {:?})\n\n",
+                        i + 1,
+                        fix.confidence
+                    ));
                     output.push_str(&fix.description);
                     output.push_str("\n\n");
 
@@ -4283,20 +4365,33 @@ impl CodeIntelEngine {
                 output.push_str("## References\n\n");
                 for cwe in &f.cwe {
                     let cwe_num = cwe.trim_start_matches("CWE-");
-                    output.push_str(&format!("- {}: https://cwe.mitre.org/data/definitions/{}.html\n", cwe, cwe_num));
+                    output.push_str(&format!(
+                        "- {}: https://cwe.mitre.org/data/definitions/{}.html\n",
+                        cwe, cwe_num
+                    ));
                 }
                 for owasp in &f.owasp {
-                    output.push_str(&format!("- {}: https://owasp.org/Top10/{}\n", owasp, owasp.replace(":", "_")));
+                    output.push_str(&format!(
+                        "- {}: https://owasp.org/Top10/{}\n",
+                        owasp,
+                        owasp.replace(":", "_")
+                    ));
                 }
             }
         } else {
             output.push_str("# No Finding at Specified Location\n\n");
-            output.push_str(&format!("No security finding found at {}:{}.\n\n", path, line));
+            output.push_str(&format!(
+                "No security finding found at {}:{}.\n\n",
+                path, line
+            ));
 
             if !findings.is_empty() {
                 output.push_str("## Other findings in this file\n\n");
                 for f in findings.iter().take(5) {
-                    output.push_str(&format!("- Line {}: {} ({})\n", f.line, f.rule_name, f.rule_id));
+                    output.push_str(&format!(
+                        "- Line {}: {} ({})\n",
+                        f.line, f.rule_name, f.rule_id
+                    ));
                 }
             }
         }
@@ -4317,7 +4412,7 @@ impl CodeIntelEngine {
         format: &str,
         compact: bool,
     ) -> Result<String> {
-        use crate::supply_chain::{SupplyChainAnalyzer, SBOMFormat};
+        use crate::supply_chain::{SBOMFormat, SupplyChainAnalyzer};
 
         let repo_path = self.get_repo_path(repo_name)?;
         let analyzer = SupplyChainAnalyzer::new();
@@ -4331,12 +4426,21 @@ impl CodeIntelEngine {
             _ => SBOMFormat::CycloneDX,
         };
 
-        match analyzer.generate_sbom(&repo_path, &project_name, &project_version, sbom_format, compact) {
+        match analyzer.generate_sbom(
+            &repo_path,
+            &project_name,
+            &project_version,
+            sbom_format,
+            compact,
+        ) {
             Ok(sbom) => {
                 let mut output = String::new();
                 output.push_str(&format!("# Software Bill of Materials: {}\n\n", repo_name));
                 output.push_str(&format!("**Format**: {:?}\n", sbom_format));
-                output.push_str(&format!("**Project**: {} v{}\n\n", project_name, project_version));
+                output.push_str(&format!(
+                    "**Project**: {} v{}\n\n",
+                    project_name, project_version
+                ));
                 if compact {
                     output.push_str("**Output**: Compact (minified)\n\n");
                 }
@@ -4383,12 +4487,16 @@ impl CodeIntelEngine {
         let vulns = analyzer.check_vulnerabilities(&deps);
 
         // Filter by severity
-        let vulns: Vec<_> = vulns.into_iter()
+        let vulns: Vec<_> = vulns
+            .into_iter()
             .filter(|v| v.risk_level >= min_severity)
             .collect();
 
         let mut output = String::new();
-        output.push_str(&format!("# Dependency Vulnerability Scan: {}\n\n", repo_name));
+        output.push_str(&format!(
+            "# Dependency Vulnerability Scan: {}\n\n",
+            repo_name
+        ));
         output.push_str(&format!("**Dependencies Scanned**: {}\n", deps.len()));
         output.push_str(&format!("**Vulnerable Dependencies**: {}\n", vulns.len()));
         output.push_str(&format!("**Severity Threshold**: {:?}\n\n", min_severity));
@@ -4397,10 +4505,22 @@ impl CodeIntelEngine {
             output.push_str("No vulnerable dependencies found above the severity threshold.\n");
         } else {
             // Group by severity
-            let critical: Vec<_> = vulns.iter().filter(|v| v.risk_level == VulnSeverity::Critical).collect();
-            let high: Vec<_> = vulns.iter().filter(|v| v.risk_level == VulnSeverity::High).collect();
-            let medium: Vec<_> = vulns.iter().filter(|v| v.risk_level == VulnSeverity::Medium).collect();
-            let low: Vec<_> = vulns.iter().filter(|v| v.risk_level == VulnSeverity::Low).collect();
+            let critical: Vec<_> = vulns
+                .iter()
+                .filter(|v| v.risk_level == VulnSeverity::Critical)
+                .collect();
+            let high: Vec<_> = vulns
+                .iter()
+                .filter(|v| v.risk_level == VulnSeverity::High)
+                .collect();
+            let medium: Vec<_> = vulns
+                .iter()
+                .filter(|v| v.risk_level == VulnSeverity::Medium)
+                .collect();
+            let low: Vec<_> = vulns
+                .iter()
+                .filter(|v| v.risk_level == VulnSeverity::Low)
+                .collect();
 
             if !critical.is_empty() {
                 output.push_str(&format!("## 🔴 Critical ({})\n\n", critical.len()));
@@ -4471,38 +4591,67 @@ impl CodeIntelEngine {
         sorted_licenses.sort_by(|a, b| b.1.len().cmp(&a.1.len()));
 
         for (license, dep_list) in sorted_licenses.iter().take(15) {
-            let deps_preview: String = dep_list.iter().take(3).cloned().collect::<Vec<_>>().join(", ");
+            let deps_preview: String = dep_list
+                .iter()
+                .take(3)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ");
             let suffix = if dep_list.len() > 3 {
                 format!(" +{} more", dep_list.len() - 3)
             } else {
                 String::new()
             };
-            output.push_str(&format!("| {} | {} | {}{} |\n", license, dep_list.len(), deps_preview, suffix));
+            output.push_str(&format!(
+                "| {} | {} | {}{} |\n",
+                license,
+                dep_list.len(),
+                deps_preview,
+                suffix
+            ));
         }
         output.push('\n');
 
         // Categorization
         output.push_str("## License Categories\n\n");
-        output.push_str(&format!("- **Permissive**: {} packages\n", report.permissive_deps.len()));
-        output.push_str(&format!("- **Copyleft**: {} packages\n", report.copyleft_deps.len()));
-        output.push_str(&format!("- **Unknown**: {} packages\n\n", report.unknown_license_deps.len()));
+        output.push_str(&format!(
+            "- **Permissive**: {} packages\n",
+            report.permissive_deps.len()
+        ));
+        output.push_str(&format!(
+            "- **Copyleft**: {} packages\n",
+            report.copyleft_deps.len()
+        ));
+        output.push_str(&format!(
+            "- **Unknown**: {} packages\n\n",
+            report.unknown_license_deps.len()
+        ));
 
         // Issues
         if !report.issues.is_empty() {
             output.push_str("## License Issues\n\n");
 
-            let copyleft_issues: Vec<_> = report.issues.iter()
+            let copyleft_issues: Vec<_> = report
+                .issues
+                .iter()
                 .filter(|i| i.issue_type == crate::supply_chain::LicenseIssueType::Copyleft)
                 .collect();
-            let unknown_issues: Vec<_> = report.issues.iter()
-                .filter(|i| i.issue_type == crate::supply_chain::LicenseIssueType::Unknown
-                    || i.issue_type == crate::supply_chain::LicenseIssueType::NoLicense)
+            let unknown_issues: Vec<_> = report
+                .issues
+                .iter()
+                .filter(|i| {
+                    i.issue_type == crate::supply_chain::LicenseIssueType::Unknown
+                        || i.issue_type == crate::supply_chain::LicenseIssueType::NoLicense
+                })
                 .collect();
 
             if !copyleft_issues.is_empty() && fail_on_copyleft {
                 output.push_str("### ⚠️ Copyleft License Warnings\n\n");
                 for issue in &copyleft_issues {
-                    output.push_str(&format!("- **{}**: {} ({})\n", issue.dependency, issue.license, issue.message));
+                    output.push_str(&format!(
+                        "- **{}**: {} ({})\n",
+                        issue.dependency, issue.license, issue.message
+                    ));
                     output.push_str(&format!("  - *Recommendation*: {}\n", issue.recommendation));
                 }
                 output.push('\n');
@@ -4574,11 +4723,19 @@ impl CodeIntelEngine {
         } else {
             output.push_str(&format!("**Upgrades Recommended**: {}\n\n", upgrades.len()));
 
-            output.push_str("| Dependency | Current | Recommended | Breaking | Vulnerabilities Fixed |\n");
-            output.push_str("|------------|---------|-------------|----------|----------------------|\n");
+            output.push_str(
+                "| Dependency | Current | Recommended | Breaking | Vulnerabilities Fixed |\n",
+            );
+            output.push_str(
+                "|------------|---------|-------------|----------|----------------------|\n",
+            );
 
             for upgrade in &upgrades {
-                let breaking = if upgrade.breaking_changes { "⚠️ Yes" } else { "No" };
+                let breaking = if upgrade.breaking_changes {
+                    "⚠️ Yes"
+                } else {
+                    "No"
+                };
                 let fixed = upgrade.vulnerabilities_fixed.join(", ");
                 output.push_str(&format!(
                     "| {} | {} | {} | {} | {} |\n",
@@ -4596,11 +4753,16 @@ impl CodeIntelEngine {
             for upgrade in &upgrades {
                 output.push_str(&format!("### {}\n\n", upgrade.dependency));
                 output.push_str(&format!("- **Current**: {}\n", upgrade.current_version));
-                output.push_str(&format!("- **Recommended**: {}\n", upgrade.recommended_version));
+                output.push_str(&format!(
+                    "- **Recommended**: {}\n",
+                    upgrade.recommended_version
+                ));
                 output.push_str(&format!("- **Reason**: {:?}\n", upgrade.reason));
 
                 if upgrade.breaking_changes {
-                    output.push_str("- **⚠️ Breaking Changes Expected**: Review changelog before upgrading\n");
+                    output.push_str(
+                        "- **⚠️ Breaking Changes Expected**: Review changelog before upgrading\n",
+                    );
                 }
 
                 if !upgrade.vulnerabilities_fixed.is_empty() {
@@ -4623,12 +4785,14 @@ impl CodeIntelEngine {
         if cargo_toml.exists() {
             if let Ok(content) = std::fs::read_to_string(&cargo_toml) {
                 if let Ok(parsed) = toml::from_str::<toml::Value>(&content) {
-                    let name = parsed.get("package")
+                    let name = parsed
+                        .get("package")
                         .and_then(|p| p.get("name"))
                         .and_then(|n| n.as_str())
                         .unwrap_or("unknown")
                         .to_string();
-                    let version = parsed.get("package")
+                    let version = parsed
+                        .get("package")
                         .and_then(|p| p.get("version"))
                         .and_then(|v| v.as_str())
                         .unwrap_or("0.0.0")
@@ -4643,11 +4807,13 @@ impl CodeIntelEngine {
         if package_json.exists() {
             if let Ok(content) = std::fs::read_to_string(&package_json) {
                 if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&content) {
-                    let name = parsed.get("name")
+                    let name = parsed
+                        .get("name")
                         .and_then(|n| n.as_str())
                         .unwrap_or("unknown")
                         .to_string();
-                    let version = parsed.get("version")
+                    let version = parsed
+                        .get("version")
                         .and_then(|v| v.as_str())
                         .unwrap_or("0.0.0")
                         .to_string();
@@ -4657,7 +4823,8 @@ impl CodeIntelEngine {
         }
 
         // Fallback to directory name
-        let name = repo_path.file_name()
+        let name = repo_path
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_string();
@@ -4676,17 +4843,17 @@ impl CodeIntelEngine {
         direction: &str,
     ) -> Result<String> {
         let repo_path = self.get_repo_path(repo_name)?;
-        let symbols = self.symbols.get(repo_name)
+        let symbols = self
+            .symbols
+            .get(repo_name)
             .map(|s| s.clone())
             .unwrap_or_default();
 
         let mut resolver = crate::incremental::SymbolResolver::new();
 
         // Deduplicate file paths to avoid parsing the same file multiple times
-        let unique_files: std::collections::HashSet<_> = symbols
-            .iter()
-            .map(|s| s.file_path.clone())
-            .collect();
+        let unique_files: std::collections::HashSet<_> =
+            symbols.iter().map(|s| s.file_path.clone()).collect();
 
         // Parse imports from unique files only
         for rel_path in unique_files {
@@ -4715,7 +4882,8 @@ impl CodeIntelEngine {
                         output.push_str("No imports found.\n\n");
                     } else {
                         for dep in deps {
-                            let rel_path = dep.strip_prefix(&repo_path)
+                            let rel_path = dep
+                                .strip_prefix(&repo_path)
                                 .map(|p| p.to_string_lossy().to_string())
                                 .unwrap_or_else(|_| dep.to_string_lossy().to_string());
                             output.push_str(&format!("- `{}`\n", rel_path));
@@ -4734,7 +4902,8 @@ impl CodeIntelEngine {
                         output.push_str("No importers found.\n\n");
                     } else {
                         for dep in dependents {
-                            let rel_path = dep.strip_prefix(&repo_path)
+                            let rel_path = dep
+                                .strip_prefix(&repo_path)
                                 .map(|p| p.to_string_lossy().to_string())
                                 .unwrap_or_else(|_| dep.to_string_lossy().to_string());
                             output.push_str(&format!("- `{}`\n", rel_path));
@@ -4753,7 +4922,8 @@ impl CodeIntelEngine {
             output.push_str("| File | Dependencies | Dependents |\n");
             output.push_str("|------|--------------|------------|\n");
 
-            let mut file_stats: Vec<_> = symbols.iter()
+            let mut file_stats: Vec<_> = symbols
+                .iter()
                 .map(|s| {
                     let path = repo_path.join(&s.file_path);
                     let deps = graph.dependencies(&path).len();
@@ -4776,7 +4946,9 @@ impl CodeIntelEngine {
     /// Find circular import dependencies
     pub async fn find_circular_imports(&self, repo_name: &str) -> Result<String> {
         let repo_path = self.get_repo_path(repo_name)?;
-        let symbols = self.symbols.get(repo_name)
+        let symbols = self
+            .symbols
+            .get(repo_name)
             .map(|s| s.clone())
             .unwrap_or_default();
 
@@ -4802,13 +4974,17 @@ impl CodeIntelEngine {
         if cycles.is_empty() {
             output.push_str("No circular imports detected.\n");
         } else {
-            output.push_str(&format!("**Found {} circular import chain(s)**\n\n", cycles.len()));
+            output.push_str(&format!(
+                "**Found {} circular import chain(s)**\n\n",
+                cycles.len()
+            ));
 
             for (i, cycle) in cycles.iter().enumerate() {
                 output.push_str(&format!("## Cycle {}\n\n", i + 1));
                 output.push_str("```\n");
                 for (j, path) in cycle.iter().enumerate() {
-                    let rel_path = path.strip_prefix(&repo_path)
+                    let rel_path = path
+                        .strip_prefix(&repo_path)
                         .map(|p| p.to_string_lossy().to_string())
                         .unwrap_or_else(|_| path.to_string_lossy().to_string());
                     output.push_str(&rel_path.to_string());
@@ -4816,9 +4992,12 @@ impl CodeIntelEngine {
                         output.push_str(" -> ");
                     }
                 }
-                output.push_str(&format!(" -> {} (cycle)\n",
-                    cycle.first()
-                        .map(|p| p.strip_prefix(&repo_path)
+                output.push_str(&format!(
+                    " -> {} (cycle)\n",
+                    cycle
+                        .first()
+                        .map(|p| p
+                            .strip_prefix(&repo_path)
                             .map(|p| p.to_string_lossy().to_string())
                             .unwrap_or_else(|_| p.to_string_lossy().to_string()))
                         .unwrap_or_default()
@@ -4848,7 +5027,8 @@ impl CodeIntelEngine {
         for entry in self.symbols.iter() {
             let repo_name = entry.key();
             for symbol in entry.value().iter() {
-                let file_path = std::path::PathBuf::from(format!("{}/{}", repo_name, symbol.file_path));
+                let file_path =
+                    std::path::PathBuf::from(format!("{}/{}", repo_name, symbol.file_path));
                 index.add_symbol(symbol.clone(), file_path);
             }
         }
@@ -4869,7 +5049,8 @@ impl CodeIntelEngine {
                 };
 
                 if let Some(kind) = target_kind {
-                    index.search(query, limit * 2)
+                    index
+                        .search(query, limit * 2)
                         .into_iter()
                         .filter(|r| r.symbol.kind == kind)
                         .take(limit)
@@ -4915,9 +5096,7 @@ impl CodeIntelEngine {
         output.push_str(&format!("# Incremental Index Status: {}\n\n", repo_name));
 
         // Count files and symbols
-        let symbol_count = self.symbols.get(repo_name)
-            .map(|s| s.len())
-            .unwrap_or(0);
+        let symbol_count = self.symbols.get(repo_name).map(|s| s.len()).unwrap_or(0);
 
         let file_count = self.file_cache.len();
 
@@ -4931,7 +5110,10 @@ impl CodeIntelEngine {
             let index_file = store.index_path(&repo_path);
             if index_file.exists() {
                 if let Ok(metadata) = std::fs::metadata(&index_file) {
-                    output.push_str(&format!("- **Index File Size**: {}\n", format_size(metadata.len())));
+                    output.push_str(&format!(
+                        "- **Index File Size**: {}\n",
+                        format_size(metadata.len())
+                    ));
                     if let Ok(modified) = metadata.modified() {
                         if let Ok(duration) = modified.elapsed() {
                             let mins = duration.as_secs() / 60;
@@ -4947,7 +5129,8 @@ impl CodeIntelEngine {
         // Symbol breakdown by kind
         if let Some(symbols) = self.symbols.get(repo_name) {
             output.push_str("\n## Symbol Breakdown\n\n");
-            let mut by_kind: std::collections::HashMap<crate::symbols::SymbolKind, usize> = std::collections::HashMap::new();
+            let mut by_kind: std::collections::HashMap<crate::symbols::SymbolKind, usize> =
+                std::collections::HashMap::new();
             for s in symbols.iter() {
                 *by_kind.entry(s.kind.clone()).or_insert(0) += 1;
             }
@@ -4971,7 +5154,9 @@ impl CodeIntelEngine {
         include_imports: bool,
     ) -> Result<String> {
         let repo_path = self.get_repo_path(repo_name)?;
-        let symbols = self.symbols.get(repo_name)
+        let symbols = self
+            .symbols
+            .get(repo_name)
             .map(|s| s.clone())
             .unwrap_or_default();
 
@@ -4998,13 +5183,16 @@ impl CodeIntelEngine {
                 continue;
             }
 
-            let rel_path = path.strip_prefix(&repo_path)
+            let rel_path = path
+                .strip_prefix(&repo_path)
                 .map(|p| p.to_string_lossy().to_string())
                 .unwrap_or_else(|_| path.to_string_lossy().to_string());
 
             for (line_num, line) in content.lines().enumerate() {
-                let is_import = line.contains("import ") || line.contains("use ")
-                    || line.contains("from ") || line.contains("require(");
+                let is_import = line.contains("import ")
+                    || line.contains("use ")
+                    || line.contains("from ")
+                    || line.contains("require(");
 
                 if !include_imports && is_import {
                     continue;
@@ -5052,17 +5240,16 @@ impl CodeIntelEngine {
         let repo_path = self.get_repo_path(repo_name)?;
         let file_path = validate_path(&repo_path, path)?;
 
-        let content = std::fs::read_to_string(&file_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&file_path).context("Failed to read file")?;
 
-        let symbols = self.symbols.get(repo_name)
+        let symbols = self
+            .symbols
+            .get(repo_name)
             .map(|s| s.clone())
             .unwrap_or_default();
 
         // Find symbols defined in this file
-        let file_symbols: Vec<_> = symbols.iter()
-            .filter(|s| s.file_path == path)
-            .collect();
+        let file_symbols: Vec<_> = symbols.iter().filter(|s| s.file_path == path).collect();
 
         let mut output = String::new();
         output.push_str(&format!("# Export Map: {}\n\n", path));
@@ -5090,21 +5277,23 @@ impl CodeIntelEngine {
             }
 
             // Detect export statements in the file
-            let export_lines: Vec<_> = content.lines()
+            let export_lines: Vec<_> = content
+                .lines()
                 .enumerate()
                 .filter(|(_, line)| {
                     let trimmed = line.trim();
-                    trimmed.starts_with("export ") ||
-                    trimmed.starts_with("pub ") ||
-                    trimmed.starts_with("module.exports") ||
-                    trimmed.starts_with("__all__")
+                    trimmed.starts_with("export ")
+                        || trimmed.starts_with("pub ")
+                        || trimmed.starts_with("module.exports")
+                        || trimmed.starts_with("__all__")
                 })
                 .collect();
 
             if !export_lines.is_empty() {
                 output.push_str("\n## Export Statements\n\n");
                 for (line_num, line) in export_lines {
-                    output.push_str(&format!("- Line {}: `{}`\n",
+                    output.push_str(&format!(
+                        "- Line {}: `{}`\n",
                         line_num + 1,
                         line.trim().chars().take(80).collect::<String>()
                     ));
@@ -5125,7 +5314,9 @@ impl CodeIntelEngine {
         max_results: usize,
     ) -> Result<String> {
         let neural = self.neural_engine.as_ref().ok_or_else(|| {
-            anyhow!("Neural search not available. Enable with --neural flag and set EMBEDDING_API_KEY.")
+            anyhow!(
+                "Neural search not available. Enable with --neural flag and set EMBEDDING_API_KEY."
+            )
         })?;
 
         let results = neural.search(query, max_results)?;
@@ -5146,7 +5337,10 @@ impl CodeIntelEngine {
         if filtered_results.is_empty() {
             output.push_str("No results found.\n");
         } else {
-            output.push_str(&format!("Found {} semantically similar results:\n\n", filtered_results.len()));
+            output.push_str(&format!(
+                "Found {} semantically similar results:\n\n",
+                filtered_results.len()
+            ));
 
             for (i, result) in filtered_results.iter().enumerate() {
                 output.push_str(&format!(
@@ -5157,8 +5351,7 @@ impl CodeIntelEngine {
                 ));
                 output.push_str(&format!(
                     "Lines {}-{}\n\n",
-                    result.document.start_line,
-                    result.document.end_line
+                    result.document.start_line, result.document.end_line
                 ));
 
                 if let Some(ref symbol) = result.document.symbol_name {
@@ -5189,9 +5382,10 @@ impl CodeIntelEngine {
         function: &str,
         threshold: f32,
     ) -> Result<String> {
-        let neural = self.neural_engine.as_ref().ok_or_else(|| {
-            anyhow!("Neural search not available. Enable with --neural flag.")
-        })?;
+        let neural = self
+            .neural_engine
+            .as_ref()
+            .ok_or_else(|| anyhow!("Neural search not available. Enable with --neural flag."))?;
 
         // Get the symbol's code
         let repo_path = self.get_repo_path(repo)?;
@@ -5199,8 +5393,13 @@ impl CodeIntelEngine {
         let content = std::fs::read_to_string(&file_path)?;
 
         // Find the symbol in our index
-        let symbols = self.symbols.get(repo).ok_or_else(|| anyhow!("Repository not indexed"))?;
-        let symbol = symbols.iter().find(|s| s.name == function && s.file_path == path)
+        let symbols = self
+            .symbols
+            .get(repo)
+            .ok_or_else(|| anyhow!("Repository not indexed"))?;
+        let symbol = symbols
+            .iter()
+            .find(|s| s.name == function && s.file_path == path)
             .ok_or_else(|| anyhow!("Symbol not found: {}", function))?;
 
         // Extract the symbol's code
@@ -5218,7 +5417,9 @@ impl CodeIntelEngine {
 
         let filtered: Vec<_> = results
             .into_iter()
-            .filter(|r| r.similarity >= threshold && r.document.symbol_name.as_deref() != Some(function))
+            .filter(|r| {
+                r.similarity >= threshold && r.document.symbol_name.as_deref() != Some(function)
+            })
             .collect();
 
         if filtered.is_empty() {
@@ -5230,14 +5431,16 @@ impl CodeIntelEngine {
                 output.push_str(&format!(
                     "## {}. {} (similarity: {:.3})\n",
                     i + 1,
-                    result.document.symbol_name.as_deref().unwrap_or(&result.document.file_path),
+                    result
+                        .document
+                        .symbol_name
+                        .as_deref()
+                        .unwrap_or(&result.document.file_path),
                     result.similarity
                 ));
                 output.push_str(&format!(
                     "File: {}:{}-{}\n\n",
-                    result.document.file_path,
-                    result.document.start_line,
-                    result.document.end_line
+                    result.document.file_path, result.document.start_line, result.document.end_line
                 ));
 
                 let content = &result.document.content;
@@ -5257,9 +5460,10 @@ impl CodeIntelEngine {
 
     /// Get neural engine statistics
     pub async fn get_neural_stats(&self) -> Result<String> {
-        let neural = self.neural_engine.as_ref().ok_or_else(|| {
-            anyhow!("Neural search not available. Enable with --neural flag.")
-        })?;
+        let neural = self
+            .neural_engine
+            .as_ref()
+            .ok_or_else(|| anyhow!("Neural search not available. Enable with --neural flag."))?;
 
         let stats = neural.stats();
 
@@ -5283,20 +5487,14 @@ impl CodeIntelEngine {
     // ========== Phase 8: Type Inference ==========
 
     /// Infer types for a Python/JavaScript function
-    pub async fn infer_types(
-        &self,
-        repo: &str,
-        path: &str,
-        function: &str,
-    ) -> Result<String> {
+    pub async fn infer_types(&self, repo: &str, path: &str, function: &str) -> Result<String> {
         let repo_meta = self
             .repos
             .get(repo)
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
         let language = detect_language_from_path(path);
 
         // Check if it's a dynamic language
@@ -5309,7 +5507,10 @@ impl CodeIntelEngine {
 
         // Parse the file
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree.as_ref().ok_or_else(|| anyhow!("Failed to parse file"))?;
+        let tree = parsed
+            .tree
+            .as_ref()
+            .ok_or_else(|| anyhow!("Failed to parse file"))?;
 
         // Find the function
         let mut found_cfg = None;
@@ -5332,20 +5533,14 @@ impl CodeIntelEngine {
     }
 
     /// Check for type errors in a file without running external type checkers
-    pub async fn check_type_errors(
-        &self,
-        repo: &str,
-        path: &str,
-    ) -> Result<String> {
-
+    pub async fn check_type_errors(&self, repo: &str, path: &str) -> Result<String> {
         let repo_meta = self
             .repos
             .get(repo)
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
         let language = detect_language_from_path(path);
 
         // Check if it's a dynamic language
@@ -5358,7 +5553,10 @@ impl CodeIntelEngine {
 
         // Parse and analyze
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree.as_ref().ok_or_else(|| anyhow!("Failed to parse file"))?;
+        let tree = parsed
+            .tree
+            .as_ref()
+            .ok_or_else(|| anyhow!("Failed to parse file"))?;
         let cfgs = cfg::analyze_function(tree, &content, path)?;
 
         let mut all_errors: Vec<(String, TypeError)> = Vec::new();
@@ -5386,7 +5584,10 @@ impl CodeIntelEngine {
         if all_errors.is_empty() {
             output.push_str("✅ No type errors found!\n");
         } else {
-            output.push_str(&format!("⚠️ **{} potential issues found**\n\n", all_errors.len()));
+            output.push_str(&format!(
+                "⚠️ **{} potential issues found**\n\n",
+                all_errors.len()
+            ));
 
             for (func_name, error) in &all_errors {
                 output.push_str(&format!(
@@ -5412,17 +5613,22 @@ impl CodeIntelEngine {
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         let full_path = validate_path(&repo_meta.path, path)?;
-        let content = std::fs::read_to_string(&full_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&full_path).context("Failed to read file")?;
         let language = detect_language_from_path(path);
 
         // Parse the file
         let parsed = self.parser.parse_file(&full_path, &content)?;
-        let tree = parsed.tree.as_ref().ok_or_else(|| anyhow!("Failed to parse file"))?;
+        let tree = parsed
+            .tree
+            .as_ref()
+            .ok_or_else(|| anyhow!("Failed to parse file"))?;
         let cfgs = cfg::analyze_function(tree, &content, path)?;
 
         let mut output = String::new();
-        output.push_str(&format!("# Typed Taint Flow: `{}` (line {})\n\n", path, source_line));
+        output.push_str(&format!(
+            "# Typed Taint Flow: `{}` (line {})\n\n",
+            path, source_line
+        ));
 
         // Find which function contains this line
         let mut containing_cfg = None;
@@ -5461,7 +5667,9 @@ impl CodeIntelEngine {
             output.push('\n');
 
             output.push_str("## Taint Sources Near Line\n\n");
-            let nearby_sources: Vec<_> = taint_result.sources.iter()
+            let nearby_sources: Vec<_> = taint_result
+                .sources
+                .iter()
                 .filter(|s| s.line >= source_line.saturating_sub(5) && s.line <= source_line + 5)
                 .collect();
 
@@ -5472,13 +5680,18 @@ impl CodeIntelEngine {
                     let type_info = types
                         .variable_types
                         .get(&source.line)
-                        .and_then(|vars: &HashMap<String, crate::type_inference::Type>| vars.get(&source.variable))
+                        .and_then(|vars: &HashMap<String, crate::type_inference::Type>| {
+                            vars.get(&source.variable)
+                        })
                         .map(|t: &crate::type_inference::Type| t.display_name())
                         .unwrap_or_else(|| "unknown".to_string());
 
                     output.push_str(&format!(
                         "- Line {}: `{}` ({}) - type: `{}`\n",
-                        source.line, source.variable, source.kind.display_name(), type_info
+                        source.line,
+                        source.variable,
+                        source.kind.display_name(),
+                        type_info
                     ));
                 }
             }
@@ -5492,7 +5705,10 @@ impl CodeIntelEngine {
                     if !flow.is_sanitized {
                         output.push_str(&format!(
                             "⚠️ {} flow: {} -> {} ({:?})\n",
-                            flow.vulnerability.as_ref().map(|v| v.display_name()).unwrap_or("Unknown"),
+                            flow.vulnerability
+                                .as_ref()
+                                .map(|v| v.display_name())
+                                .unwrap_or("Unknown"),
                             flow.source.variable,
                             flow.sink.function,
                             flow.severity.unwrap_or(crate::taint::Severity::Medium)
@@ -5503,7 +5719,9 @@ impl CodeIntelEngine {
                             let type_info = types
                                 .variable_types
                                 .get(&step.line)
-                                .and_then(|vars: &HashMap<String, crate::type_inference::Type>| vars.get(&step.variable))
+                                .and_then(|vars: &HashMap<String, crate::type_inference::Type>| {
+                                    vars.get(&step.variable)
+                                })
                                 .map(|t: &crate::type_inference::Type| t.display_name())
                                 .unwrap_or_else(|| "unknown".to_string());
 
@@ -5543,7 +5761,10 @@ impl CodeIntelEngine {
                 output.push_str("*No immediate security concerns detected*\n");
             }
         } else {
-            output.push_str(&format!("*Line {} is not within a function body*\n", source_line));
+            output.push_str(&format!(
+                "*Line {} is not within a function body*\n",
+                source_line
+            ));
         }
 
         Ok(output)
@@ -5555,22 +5776,30 @@ impl CodeIntelEngine {
 
     /// Get call graph data for visualization
     /// Returns a reference to the call graph for the given repository
-    pub fn get_call_graph_for_viz(&self, repo: &str) -> Result<dashmap::mapref::one::Ref<'_, String, CallGraph>> {
+    pub fn get_call_graph_for_viz(
+        &self,
+        repo: &str,
+    ) -> Result<dashmap::mapref::one::Ref<'_, String, CallGraph>> {
         if !self.options.call_graph_enabled {
-            return Err(anyhow!("Call graph not enabled. Start with --call-graph flag."));
+            return Err(anyhow!(
+                "Call graph not enabled. Start with --call-graph flag."
+            ));
         }
 
         // Find the repo
         let repo_name = if repo.is_empty() {
             // Use first available repo
-            self.call_graphs.iter().next()
+            self.call_graphs
+                .iter()
+                .next()
                 .map(|e| e.key().clone())
                 .ok_or_else(|| anyhow!("No repositories indexed with call graphs"))?
         } else {
             repo.to_string()
         };
 
-        self.call_graphs.get(&repo_name)
+        self.call_graphs
+            .get(&repo_name)
             .ok_or_else(|| anyhow!("Call graph not found for repository: {}", repo_name))
     }
 
@@ -5585,8 +5814,7 @@ impl CodeIntelEngine {
         let repo_path = self.get_repo_path(repo)?;
         let file_path = validate_path(&repo_path, path)?;
 
-        let content = std::fs::read_to_string(&file_path)
-            .context("Failed to read file")?;
+        let content = std::fs::read_to_string(&file_path).context("Failed to read file")?;
 
         let lines: Vec<&str> = content.lines().collect();
         let start = center_line.saturating_sub(context + 1);
@@ -5603,7 +5831,10 @@ impl CodeIntelEngine {
     }
 
     /// Get import graph data for visualization
-    pub async fn get_import_graph_for_viz(&self, repo: &str) -> Result<crate::tool_handlers::graph::ImportGraphData> {
+    pub async fn get_import_graph_for_viz(
+        &self,
+        repo: &str,
+    ) -> Result<crate::tool_handlers::graph::ImportGraphData> {
         use std::collections::HashMap;
 
         let repo_path = self.get_repo_path(repo)?;
@@ -5623,16 +5854,15 @@ impl CodeIntelEngine {
             }
 
             let path_str = path.to_string_lossy().to_string();
-            let relative_path = path.strip_prefix(&repo_path)
+            let relative_path = path
+                .strip_prefix(&repo_path)
                 .map(|p| p.to_string_lossy().to_string())
                 .unwrap_or(path_str.clone());
 
             if let Ok(content) = std::fs::read_to_string(path) {
                 let imports = parse_imports_from_content(&content, &relative_path);
-                let import_paths: Vec<String> = imports
-                    .iter()
-                    .map(|i| i.import_path.clone())
-                    .collect();
+                let import_paths: Vec<String> =
+                    imports.iter().map(|i| i.import_path.clone()).collect();
 
                 if !import_paths.is_empty() {
                     files.insert(relative_path, import_paths);
@@ -5643,10 +5873,7 @@ impl CodeIntelEngine {
         // For now, skip complex cycle detection
         let cycles: Vec<Vec<String>> = Vec::new();
 
-        Ok(crate::tool_handlers::graph::ImportGraphData {
-            files,
-            cycles,
-        })
+        Ok(crate::tool_handlers::graph::ImportGraphData { files, cycles })
     }
 
     /// Get symbol graph data for visualization
@@ -5656,10 +5883,13 @@ impl CodeIntelEngine {
         symbol_name: &str,
     ) -> Result<crate::tool_handlers::graph::SymbolGraphData> {
         // Find the symbol definition
-        let symbols = self.symbols.get(repo)
+        let symbols = self
+            .symbols
+            .get(repo)
             .ok_or_else(|| anyhow!("Repository not indexed: {}", repo))?;
 
-        let target_symbol = symbols.iter()
+        let target_symbol = symbols
+            .iter()
             .find(|s| s.name == symbol_name || s.name.ends_with(&format!("::{}", symbol_name)))
             .ok_or_else(|| anyhow!("Symbol not found: {}", symbol_name))?;
 
@@ -5701,14 +5931,19 @@ impl CodeIntelEngine {
         repo: &str,
         function: &str,
     ) -> Result<crate::tool_handlers::graph::CfgData> {
-        let repo_meta = self.repos.get(repo)
+        let repo_meta = self
+            .repos
+            .get(repo)
             .ok_or_else(|| anyhow!("Repository '{}' not found", repo))?;
 
         // Find the function in symbols
-        let symbols = self.symbols.get(repo)
+        let symbols = self
+            .symbols
+            .get(repo)
             .ok_or_else(|| anyhow!("No symbols for repository: {}", repo))?;
 
-        let func_symbol = symbols.iter()
+        let func_symbol = symbols
+            .iter()
             .find(|s| s.name == function || s.name.ends_with(&format!("::{}", function)))
             .ok_or_else(|| anyhow!("Function not found: {}", function))?;
 
@@ -5950,7 +6185,10 @@ fn parse_imports_from_content(content: &str, file_path: &str) -> Vec<crate::incr
 /// Format a vulnerability finding for output
 fn format_vuln_finding(v: &crate::supply_chain::DependencyVuln) -> String {
     let mut s = String::new();
-    s.push_str(&format!("### {} @ {}\n\n", v.dependency.name, v.dependency.version));
+    s.push_str(&format!(
+        "### {} @ {}\n\n",
+        v.dependency.name, v.dependency.version
+    ));
     s.push_str(&format!("**Ecosystem**: {:?}\n", v.dependency.ecosystem));
 
     if let Some(ref upgrade) = v.upgrade_to {
@@ -5967,7 +6205,10 @@ fn format_vuln_finding(v: &crate::supply_chain::DependencyVuln) -> String {
             s.push_str(&format!("  - CVSS: {:.1}\n", score));
         }
         if !vuln.fixed_versions.is_empty() {
-            s.push_str(&format!("  - Fixed in: {}\n", vuln.fixed_versions.join(", ")));
+            s.push_str(&format!(
+                "  - Fixed in: {}\n",
+                vuln.fixed_versions.join(", ")
+            ));
         }
     }
     s.push('\n');
@@ -6012,7 +6253,9 @@ fn parse_severity_threshold(threshold: Option<&str>) -> crate::taint::Severity {
 
 /// Check if file extension is supported for security scanning
 fn is_security_scannable(path: &str) -> bool {
-    SECURITY_SCAN_EXTENSIONS.iter().any(|ext| path.ends_with(ext))
+    SECURITY_SCAN_EXTENSIONS
+        .iter()
+        .any(|ext| path.ends_with(ext))
 }
 
 /// OWASP Top 10 2021 categories
@@ -6086,9 +6329,7 @@ where
 }
 
 /// Format findings grouped by severity level
-fn format_findings_by_severity(
-    findings: &[crate::security_rules::SecurityFinding],
-) -> String {
+fn format_findings_by_severity(findings: &[crate::security_rules::SecurityFinding]) -> String {
     use crate::taint::Severity;
 
     let mut output = String::new();
@@ -6127,7 +6368,11 @@ fn detect_language_from_path(path: &str) -> String {
         "go".to_string()
     } else if path.ends_with(".c") || path.ends_with(".h") {
         "c".to_string()
-    } else if path.ends_with(".cpp") || path.ends_with(".cc") || path.ends_with(".cxx") || path.ends_with(".hpp") {
+    } else if path.ends_with(".cpp")
+        || path.ends_with(".cc")
+        || path.ends_with(".cxx")
+        || path.ends_with(".hpp")
+    {
         "cpp".to_string()
     } else if path.ends_with(".java") {
         "java".to_string()
@@ -6283,7 +6528,7 @@ fn ext_to_language(ext: &str) -> String {
         "cs" => "C#",
         _ => ext,
     }
-        .to_string()
+    .to_string()
 }
 
 fn extract_imports(content: &str, _path: &str) -> Vec<String> {
@@ -6333,5 +6578,5 @@ fn get_language_from_path(path: &str) -> String {
         Some("cs") => "csharp",
         _ => "unknown",
     }
-        .to_string()
+    .to_string()
 }

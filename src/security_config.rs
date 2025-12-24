@@ -184,9 +184,7 @@ pub fn is_sensitive_file(path: &str) -> bool {
         "keystore",
     ];
 
-    sensitive_patterns
-        .iter()
-        .any(|p| path_lower.contains(p))
+    sensitive_patterns.iter().any(|p| path_lower.contains(p))
 }
 
 #[cfg(test)]

@@ -2,9 +2,9 @@
 //!
 //! Uses Reciprocal Rank Fusion (RRF) to combine results from multiple search methods.
 
-use crate::chunking::{CodeChunk, ChunkType};
+use crate::chunking::{ChunkType, CodeChunk};
 use crate::embeddings::{EmbeddingEngine, SimilarityResult};
-use crate::search::{ConcurrentSearchIndex, SearchDocument, SearchResult, DocType};
+use crate::search::{ConcurrentSearchIndex, DocType, SearchDocument, SearchResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -92,10 +92,7 @@ pub struct HybridSearchEngine {
 
 impl HybridSearchEngine {
     /// Create a new hybrid search engine
-    pub fn new(
-        bm25_index: Arc<ConcurrentSearchIndex>,
-        tfidf_engine: Arc<EmbeddingEngine>,
-    ) -> Self {
+    pub fn new(bm25_index: Arc<ConcurrentSearchIndex>, tfidf_engine: Arc<EmbeddingEngine>) -> Self {
         Self {
             bm25_index,
             tfidf_engine,
@@ -202,15 +199,15 @@ impl HybridSearchEngine {
             if id.to_lowercase().contains(&query_lower) {
                 boost *= self.config.exact_match_boost;
             }
-            if matches!(result.document.doc_type, DocType::Function | DocType::Method) {
+            if matches!(
+                result.document.doc_type,
+                DocType::Function | DocType::Method
+            ) {
                 boost *= self.config.function_boost;
             }
 
             *scores.entry(id.clone()).or_default() += rrf_score * boost;
-            ranks
-                .entry(id.clone())
-                .or_insert((None, None))
-                .0 = Some(rank);
+            ranks.entry(id.clone()).or_insert((None, None)).0 = Some(rank);
 
             doc_info.entry(id.clone()).or_insert_with(|| DocumentInfo {
                 id: id.clone(),
@@ -236,10 +233,7 @@ impl HybridSearchEngine {
             }
 
             *scores.entry(id.clone()).or_default() += rrf_score * boost;
-            ranks
-                .entry(id.clone())
-                .or_insert((None, None))
-                .1 = Some(rank);
+            ranks.entry(id.clone()).or_insert((None, None)).1 = Some(rank);
 
             doc_info.entry(id.clone()).or_insert_with(|| DocumentInfo {
                 id: id.clone(),

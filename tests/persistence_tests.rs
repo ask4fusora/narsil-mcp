@@ -66,7 +66,7 @@ async fn test_persistence_index_creation() -> Result<()> {
         vec![repo.path().to_path_buf()],
         options,
     )
-        .await?;
+    .await?;
 
     // Verify the repository was indexed
     let repos_list = engine.list_repos().await?;
@@ -114,7 +114,7 @@ async fn test_persistence_index_loading() -> Result<()> {
             vec![repo.path().to_path_buf()],
             options.clone(),
         )
-            .await?;
+        .await?;
 
         let symbols = engine
             .find_symbols(
@@ -138,7 +138,7 @@ async fn test_persistence_index_loading() -> Result<()> {
             vec![repo.path().to_path_buf()],
             options,
         )
-            .await?;
+        .await?;
 
         // Verify symbols are available (loaded from cache)
         let symbols = engine2
@@ -190,7 +190,7 @@ async fn test_persistence_stale_file_detection() -> Result<()> {
             vec![repo.path().to_path_buf()],
             options.clone(),
         )
-            .await?;
+        .await?;
     }
 
     // Wait a bit
@@ -216,7 +216,7 @@ async fn test_persistence_stale_file_detection() -> Result<()> {
             vec![repo.path().to_path_buf()],
             options,
         )
-            .await?;
+        .await?;
 
         // Verify the new struct is present
         let symbols = engine2
@@ -263,7 +263,7 @@ async fn test_persistence_disabled() -> Result<()> {
         vec![repo.path().to_path_buf()],
         options,
     )
-        .await?;
+    .await?;
 
     // Verify it still works, just doesn't persist
     let symbols = engine
@@ -305,7 +305,7 @@ async fn test_empty_persisted_index() -> Result<()> {
             vec![repo.path().to_path_buf()],
             options.clone(),
         )
-            .await?;
+        .await?;
     }
 
     // Add a file
@@ -323,7 +323,7 @@ async fn test_empty_persisted_index() -> Result<()> {
             vec![repo.path().to_path_buf()],
             options,
         )
-            .await?;
+        .await?;
 
         let symbols = engine2
             .find_symbols(
@@ -364,7 +364,7 @@ async fn test_async_watcher_creation() -> Result<()> {
         vec![repo.path().to_path_buf()],
         options,
     )
-        .await?;
+    .await?;
 
     // Should be able to create async watcher
     let result = engine.create_async_file_watcher();
@@ -398,7 +398,7 @@ async fn test_async_watcher_disabled_when_watch_disabled() -> Result<()> {
         vec![repo.path().to_path_buf()],
         options,
     )
-        .await?;
+    .await?;
 
     // Should NOT be able to create async watcher
     let result = engine.create_async_file_watcher();
@@ -432,7 +432,7 @@ async fn test_async_watcher_file_change_detection() -> Result<()> {
         vec![repo.path().to_path_buf()],
         options,
     )
-        .await?;
+    .await?;
 
     // Create async watcher
     let (_watcher, mut rx) = engine.create_async_file_watcher().unwrap();
@@ -482,7 +482,7 @@ async fn test_async_watcher_debouncing() -> Result<()> {
         vec![repo.path().to_path_buf()],
         options,
     )
-        .await?;
+    .await?;
 
     let (_watcher, mut rx) = engine.create_async_file_watcher().unwrap();
 
@@ -544,7 +544,7 @@ async fn test_async_watcher_filters_non_source_files() -> Result<()> {
         vec![repo.path().to_path_buf()],
         options,
     )
-        .await?;
+    .await?;
 
     let (_watcher, mut rx) = engine.create_async_file_watcher().unwrap();
 

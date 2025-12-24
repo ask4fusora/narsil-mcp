@@ -17,6 +17,7 @@ pub type DependencyId = String;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum SBOMFormat {
     #[default]
     CycloneDX,
@@ -24,17 +25,16 @@ pub enum SBOMFormat {
     JSON,
 }
 
-
 /// Supported package manager ecosystems
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Ecosystem {
-    Cargo,      // Rust - Cargo.toml
-    Npm,        // JavaScript/Node - package.json
-    PyPI,       // Python - requirements.txt, pyproject.toml
-    Go,         // Go - go.mod
-    Maven,      // Java - pom.xml
-    NuGet,      // .NET - *.csproj
+    Cargo, // Rust - Cargo.toml
+    Npm,   // JavaScript/Node - package.json
+    PyPI,  // Python - requirements.txt, pyproject.toml
+    Go,    // Go - go.mod
+    Maven, // Java - pom.xml
+    NuGet, // .NET - *.csproj
     Unknown,
 }
 
@@ -70,9 +70,9 @@ pub struct Dependency {
     pub name: String,
     pub version: String,
     pub ecosystem: Ecosystem,
-    pub source: Option<String>,         // Registry URL or git repo
-    pub checksum: Option<String>,       // SHA256 hash
-    pub license: Option<String>,        // SPDX license identifier
+    pub source: Option<String>,          // Registry URL or git repo
+    pub checksum: Option<String>,        // SHA256 hash
+    pub license: Option<String>,         // SPDX license identifier
     pub dependencies: Vec<DependencyId>, // Transitive dependencies
     pub dev_dependency: bool,
     pub optional: bool,
@@ -134,17 +134,17 @@ impl VulnSeverity {
 /// Vulnerability information from OSV
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vulnerability {
-    pub id: String,                     // OSV/CVE/GHSA ID
-    pub aliases: Vec<String>,           // Other IDs (CVE, GHSA, etc.)
+    pub id: String,           // OSV/CVE/GHSA ID
+    pub aliases: Vec<String>, // Other IDs (CVE, GHSA, etc.)
     pub summary: String,
     pub details: Option<String>,
     pub severity: VulnSeverity,
     pub cvss_score: Option<f64>,
     pub affected_versions: Vec<String>,
-    pub fixed_versions: Vec<String>,    // Versions that fix this vuln
-    pub references: Vec<String>,        // URLs for more info
-    pub published: Option<String>,      // ISO date
-    pub modified: Option<String>,       // ISO date
+    pub fixed_versions: Vec<String>, // Versions that fix this vuln
+    pub references: Vec<String>,     // URLs for more info
+    pub published: Option<String>,   // ISO date
+    pub modified: Option<String>,    // ISO date
 }
 
 /// Result of vulnerability scan for a dependency
@@ -152,14 +152,14 @@ pub struct Vulnerability {
 pub struct DependencyVuln {
     pub dependency: Dependency,
     pub vulnerabilities: Vec<Vulnerability>,
-    pub risk_level: VulnSeverity,       // Highest severity found
-    pub upgrade_to: Option<String>,     // Safe version to upgrade to
+    pub risk_level: VulnSeverity,   // Highest severity found
+    pub upgrade_to: Option<String>, // Safe version to upgrade to
 }
 
 /// SPDX License identifier
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct License {
-    pub id: String,                     // SPDX identifier (e.g., "MIT", "Apache-2.0")
+    pub id: String, // SPDX identifier (e.g., "MIT", "Apache-2.0")
     pub name: String,
     pub is_osi_approved: bool,
     pub is_copyleft: bool,
@@ -228,11 +228,11 @@ pub struct LicenseIssue {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LicenseIssueType {
-    Unknown,            // License not recognized
-    Copyleft,           // May require source disclosure
-    Incompatible,       // Conflicts with project license
-    Commercial,         // Commercial/proprietary restrictions
-    NoLicense,          // No license specified
+    Unknown,      // License not recognized
+    Copyleft,     // May require source disclosure
+    Incompatible, // Conflicts with project license
+    Commercial,   // Commercial/proprietary restrictions
+    NoLicense,    // No license specified
 }
 
 /// License compliance report
@@ -249,6 +249,7 @@ pub struct LicenseReport {
 
 /// Software Bill of Materials
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct SBOM {
     pub format: SBOMFormat,
     pub spec_version: String,
@@ -280,7 +281,7 @@ pub struct SBOMComponent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SBOMHash {
-    pub alg: String,   // "SHA-256", "SHA-512", etc.
+    pub alg: String, // "SHA-256", "SHA-512", etc.
     pub content: String,
 }
 
@@ -310,11 +311,11 @@ pub struct UpgradeRecommendation {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum UpgradeReason {
-    Security,           // Fixes vulnerabilities
-    Deprecation,        // Current version deprecated
-    EndOfLife,          // No longer supported
-    Compatibility,      // Better compatibility
-    Performance,        // Performance improvements
+    Security,      // Fixes vulnerabilities
+    Deprecation,   // Current version deprecated
+    EndOfLife,     // No longer supported
+    Compatibility, // Better compatibility
+    Performance,   // Performance improvements
 }
 
 /// Supply chain analyzer
@@ -345,7 +346,8 @@ impl SupplyChainAnalyzer {
     /// Returns `Some(license)` if found, `None` otherwise.
     pub fn extract_cargo_project_license(content: &str) -> Option<String> {
         let parsed: toml::Value = toml::from_str(content).ok()?;
-        parsed.get("package")
+        parsed
+            .get("package")
             .and_then(|pkg| pkg.get("license"))
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
@@ -408,10 +410,7 @@ impl SupplyChainAnalyzer {
                 }
 
                 // Extract package name from the key (e.g., "node_modules/lodash" -> "lodash")
-                let name = key
-                    .strip_prefix("node_modules/")
-                    .unwrap_or(key)
-                    .to_string();
+                let name = key.strip_prefix("node_modules/").unwrap_or(key).to_string();
 
                 // Skip nested node_modules (scoped packages are ok)
                 if name.contains("node_modules/") {
@@ -429,10 +428,7 @@ impl SupplyChainAnalyzer {
                     .and_then(|v| v.as_str())
                     .map(String::from);
 
-                let dev = value
-                    .get("dev")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false);
+                let dev = value.get("dev").and_then(|v| v.as_bool()).unwrap_or(false);
 
                 let optional = value
                     .get("optional")
@@ -454,25 +450,60 @@ impl SupplyChainAnalyzer {
     fn init_licenses(&mut self) {
         // Initialize common licenses
         let common_licenses = [
-            "MIT", "Apache-2.0", "GPL-2.0", "GPL-3.0", "LGPL-2.1", "LGPL-3.0",
-            "BSD-2-Clause", "BSD-3-Clause", "ISC", "MPL-2.0", "AGPL-3.0",
-            "Unlicense", "CC0-1.0", "BSL-1.0",
+            "MIT",
+            "Apache-2.0",
+            "GPL-2.0",
+            "GPL-3.0",
+            "LGPL-2.1",
+            "LGPL-3.0",
+            "BSD-2-Clause",
+            "BSD-3-Clause",
+            "ISC",
+            "MPL-2.0",
+            "AGPL-3.0",
+            "Unlicense",
+            "CC0-1.0",
+            "BSL-1.0",
         ];
 
         for id in common_licenses {
-            self.known_licenses.insert(id.to_lowercase(), License::from_spdx(id));
+            self.known_licenses
+                .insert(id.to_lowercase(), License::from_spdx(id));
         }
 
         // License compatibility matrix (simplified)
         // MIT can be combined with most licenses
-        self.license_compatibility.insert("mit".to_string(),
-            ["apache-2.0", "bsd-2-clause", "bsd-3-clause", "isc", "unlicense", "cc0-1.0", "bsl-1.0"]
-                .iter().map(|s| s.to_string()).collect());
+        self.license_compatibility.insert(
+            "mit".to_string(),
+            [
+                "apache-2.0",
+                "bsd-2-clause",
+                "bsd-3-clause",
+                "isc",
+                "unlicense",
+                "cc0-1.0",
+                "bsl-1.0",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
+        );
 
         // Apache-2.0 has some restrictions with GPL-2.0
-        self.license_compatibility.insert("apache-2.0".to_string(),
-            ["mit", "bsd-2-clause", "bsd-3-clause", "isc", "gpl-3.0", "lgpl-3.0"]
-                .iter().map(|s| s.to_string()).collect());
+        self.license_compatibility.insert(
+            "apache-2.0".to_string(),
+            [
+                "mit",
+                "bsd-2-clause",
+                "bsd-3-clause",
+                "isc",
+                "gpl-3.0",
+                "lgpl-3.0",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
+        );
     }
 
     /// Phase D4: Enrich npm dependencies with known license information
@@ -489,7 +520,6 @@ impl SupplyChainAnalyzer {
             ("dayjs", "MIT"),
             ("date-fns", "MIT"),
             ("luxon", "MIT"),
-
             // React ecosystem
             ("react", "MIT"),
             ("react-dom", "MIT"),
@@ -504,20 +534,17 @@ impl SupplyChainAnalyzer {
             ("emotion", "MIT"),
             ("@emotion/react", "MIT"),
             ("@emotion/styled", "MIT"),
-
             // Vue ecosystem
             ("vue", "MIT"),
             ("vuex", "MIT"),
             ("vue-router", "MIT"),
             ("nuxt", "MIT"),
             ("pinia", "MIT"),
-
             // Angular
             ("@angular/core", "MIT"),
             ("@angular/common", "MIT"),
             ("@angular/router", "MIT"),
             ("rxjs", "Apache-2.0"),
-
             // Build tools
             ("webpack", "MIT"),
             ("rollup", "MIT"),
@@ -528,7 +555,6 @@ impl SupplyChainAnalyzer {
             ("@babel/core", "MIT"),
             ("@babel/preset-env", "MIT"),
             ("typescript", "Apache-2.0"),
-
             // HTTP/Networking
             ("axios", "MIT"),
             ("node-fetch", "MIT"),
@@ -537,7 +563,6 @@ impl SupplyChainAnalyzer {
             ("request", "Apache-2.0"),
             ("isomorphic-fetch", "MIT"),
             ("cross-fetch", "MIT"),
-
             // Express and middleware
             ("express", "MIT"),
             ("koa", "MIT"),
@@ -549,7 +574,6 @@ impl SupplyChainAnalyzer {
             ("morgan", "MIT"),
             ("cookie-parser", "MIT"),
             ("compression", "MIT"),
-
             // Database/ORM
             ("mongoose", "MIT"),
             ("sequelize", "MIT"),
@@ -562,7 +586,6 @@ impl SupplyChainAnalyzer {
             ("mongodb", "Apache-2.0"),
             ("redis", "MIT"),
             ("ioredis", "MIT"),
-
             // Testing
             ("jest", "MIT"),
             ("mocha", "MIT"),
@@ -575,13 +598,11 @@ impl SupplyChainAnalyzer {
             ("sinon", "BSD-3-Clause"),
             ("nyc", "ISC"),
             ("istanbul", "BSD-3-Clause"),
-
             // Linting/Formatting
             ("eslint", "MIT"),
             ("prettier", "MIT"),
             ("stylelint", "MIT"),
             ("tslint", "Apache-2.0"),
-
             // CLI/Utils
             ("commander", "MIT"),
             ("yargs", "MIT"),
@@ -596,7 +617,6 @@ impl SupplyChainAnalyzer {
             ("glob", "ISC"),
             ("minimatch", "ISC"),
             ("minimist", "MIT"),
-
             // Utilities
             ("uuid", "MIT"),
             ("nanoid", "MIT"),
@@ -609,40 +629,33 @@ impl SupplyChainAnalyzer {
             ("yup", "MIT"),
             ("zod", "MIT"),
             ("ajv", "MIT"),
-
             // Async/Promises
             ("async", "MIT"),
             ("bluebird", "MIT"),
             ("p-limit", "MIT"),
             ("p-queue", "MIT"),
-
             // File handling
             ("fs-extra", "MIT"),
             ("graceful-fs", "ISC"),
             ("chokidar", "MIT"),
             ("formidable", "MIT"),
             ("multer", "MIT"),
-
             // Streams
             ("through2", "MIT"),
             ("concat-stream", "MIT"),
             ("readable-stream", "MIT"),
-
             // Logging
             ("winston", "MIT"),
             ("pino", "MIT"),
             ("bunyan", "MIT"),
             ("log4js", "Apache-2.0"),
-
             // Websockets
             ("socket.io", "MIT"),
             ("ws", "MIT"),
-
             // GraphQL
             ("graphql", "MIT"),
             ("apollo-server", "MIT"),
             ("@apollo/client", "MIT"),
-
             // Markdown/Parsing
             ("marked", "MIT"),
             ("markdown-it", "MIT"),
@@ -650,11 +663,9 @@ impl SupplyChainAnalyzer {
             ("cheerio", "MIT"),
             ("jsdom", "MIT"),
             ("htmlparser2", "MIT"),
-
             // Image processing
             ("sharp", "Apache-2.0"),
             ("jimp", "MIT"),
-
             // Other popular packages
             ("classnames", "MIT"),
             ("clsx", "MIT"),
@@ -700,11 +711,9 @@ impl SupplyChainAnalyzer {
             ("futures", "MIT OR Apache-2.0"),
             ("futures-core", "MIT OR Apache-2.0"),
             ("futures-util", "MIT OR Apache-2.0"),
-
             // Async runtime
             ("async-std", "MIT OR Apache-2.0"),
             ("smol", "MIT OR Apache-2.0"),
-
             // Web frameworks
             ("actix-web", "MIT OR Apache-2.0"),
             ("actix-rt", "MIT OR Apache-2.0"),
@@ -715,7 +724,6 @@ impl SupplyChainAnalyzer {
             ("warp", "MIT"),
             ("tower", "MIT"),
             ("tower-http", "MIT"),
-
             // Database
             ("sqlx", "MIT OR Apache-2.0"),
             ("diesel", "MIT OR Apache-2.0"),
@@ -723,14 +731,12 @@ impl SupplyChainAnalyzer {
             ("sea-orm", "MIT OR Apache-2.0"),
             ("mongodb", "Apache-2.0"),
             ("redis", "BSD-3-Clause"),
-
             // Serialization
             ("toml", "MIT OR Apache-2.0"),
             ("yaml-rust", "MIT OR Apache-2.0"),
             ("ron", "MIT OR Apache-2.0"),
             ("bincode", "MIT"),
             ("postcard", "MIT OR Apache-2.0"),
-
             // Crypto
             ("ring", "ISC AND MIT AND OpenSSL"),
             ("rustls", "MIT OR Apache-2.0"),
@@ -741,13 +747,11 @@ impl SupplyChainAnalyzer {
             ("argon2", "MIT OR Apache-2.0"),
             ("aes", "MIT OR Apache-2.0"),
             ("rsa", "MIT OR Apache-2.0"),
-
             // Error handling
             ("anyhow", "MIT OR Apache-2.0"),
             ("thiserror", "MIT OR Apache-2.0"),
             ("eyre", "MIT OR Apache-2.0"),
             ("miette", "Apache-2.0"),
-
             // CLI
             ("clap", "MIT OR Apache-2.0"),
             ("structopt", "MIT OR Apache-2.0"),
@@ -755,7 +759,6 @@ impl SupplyChainAnalyzer {
             ("indicatif", "MIT"),
             ("console", "MIT"),
             ("dialoguer", "MIT"),
-
             // Logging
             ("log", "MIT OR Apache-2.0"),
             ("env_logger", "MIT OR Apache-2.0"),
@@ -763,7 +766,6 @@ impl SupplyChainAnalyzer {
             ("tracing-subscriber", "MIT"),
             ("pretty_env_logger", "MIT OR Apache-2.0"),
             ("fern", "MIT"),
-
             // Utilities
             ("regex", "MIT OR Apache-2.0"),
             ("lazy_static", "MIT OR Apache-2.0"),
@@ -786,14 +788,12 @@ impl SupplyChainAnalyzer {
             ("rand", "MIT OR Apache-2.0"),
             ("rand_core", "MIT OR Apache-2.0"),
             ("getrandom", "MIT OR Apache-2.0"),
-
             // Parsing/Text
             ("nom", "MIT"),
             ("pest", "MIT OR Apache-2.0"),
             ("tree-sitter", "MIT"),
             ("pulldown-cmark", "MIT"),
             ("syntect", "MIT"),
-
             // Testing
             ("criterion", "MIT OR Apache-2.0"),
             ("proptest", "MIT OR Apache-2.0"),
@@ -801,14 +801,12 @@ impl SupplyChainAnalyzer {
             ("mockall", "MIT OR Apache-2.0"),
             ("tempfile", "MIT OR Apache-2.0"),
             ("assert_cmd", "MIT OR Apache-2.0"),
-
             // Build/FFI
             ("cc", "MIT OR Apache-2.0"),
             ("bindgen", "BSD-3-Clause"),
             ("libc", "MIT OR Apache-2.0"),
             ("winapi", "MIT OR Apache-2.0"),
             ("nix", "MIT"),
-
             // File/IO
             ("walkdir", "MIT OR Unlicense"),
             ("ignore", "MIT OR Unlicense"),
@@ -818,7 +816,6 @@ impl SupplyChainAnalyzer {
             ("flate2", "MIT OR Apache-2.0"),
             ("zip", "MIT"),
             ("tar", "MIT OR Apache-2.0"),
-
             // Network
             ("tonic", "MIT"),
             ("prost", "Apache-2.0"),
@@ -826,7 +823,6 @@ impl SupplyChainAnalyzer {
             ("native-tls", "MIT OR Apache-2.0"),
             ("rustls-pemfile", "MIT OR Apache-2.0"),
             ("webpki", "ISC"),
-
             // Derive/Proc macros
             ("derive_more", "MIT"),
             ("strum", "MIT"),
@@ -834,14 +830,11 @@ impl SupplyChainAnalyzer {
             ("quote", "MIT OR Apache-2.0"),
             ("syn", "MIT OR Apache-2.0"),
             ("proc-macro2", "MIT OR Apache-2.0"),
-
             // Git
             ("git2", "MIT OR Apache-2.0"),
             ("gix", "MIT OR Apache-2.0"),
-
             // Tantivy
             ("tantivy", "MIT"),
-
             // Other common
             ("cfg-if", "MIT OR Apache-2.0"),
             ("either", "MIT OR Apache-2.0"),
@@ -931,8 +924,8 @@ impl SupplyChainAnalyzer {
         let content = std::fs::read_to_string(path)
             .map_err(|e| format!("Failed to read Cargo.toml: {}", e))?;
 
-        let parsed: toml::Value = toml::from_str(&content)
-            .map_err(|e| format!("Failed to parse Cargo.toml: {}", e))?;
+        let parsed: toml::Value =
+            toml::from_str(&content).map_err(|e| format!("Failed to parse Cargo.toml: {}", e))?;
 
         let mut deps = Vec::new();
 
@@ -967,21 +960,34 @@ impl SupplyChainAnalyzer {
         Ok(deps)
     }
 
-    fn parse_cargo_dependency(&self, name: &str, value: &toml::Value, is_dev: bool) -> Result<Dependency, String> {
+    fn parse_cargo_dependency(
+        &self,
+        name: &str,
+        value: &toml::Value,
+        is_dev: bool,
+    ) -> Result<Dependency, String> {
         let version = match value {
             toml::Value::String(v) => v.clone(),
-            toml::Value::Table(t) => {
-                t.get("version")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .or_else(|| t.get("git").and_then(|v| v.as_str()).map(|s| format!("git:{}", s)))
-                    .or_else(|| t.get("path").and_then(|v| v.as_str()).map(|s| format!("path:{}", s)))
-                    .unwrap_or_else(|| "*".to_string())
-            }
+            toml::Value::Table(t) => t
+                .get("version")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .or_else(|| {
+                    t.get("git")
+                        .and_then(|v| v.as_str())
+                        .map(|s| format!("git:{}", s))
+                })
+                .or_else(|| {
+                    t.get("path")
+                        .and_then(|v| v.as_str())
+                        .map(|s| format!("path:{}", s))
+                })
+                .unwrap_or_else(|| "*".to_string()),
             _ => "*".to_string(),
         };
 
-        let optional = value.as_table()
+        let optional = value
+            .as_table()
             .and_then(|t| t.get("optional"))
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
@@ -1000,8 +1006,8 @@ impl SupplyChainAnalyzer {
         let content = std::fs::read_to_string(path)
             .map_err(|e| format!("Failed to read Cargo.lock: {}", e))?;
 
-        let parsed: toml::Value = toml::from_str(&content)
-            .map_err(|e| format!("Failed to parse Cargo.lock: {}", e))?;
+        let parsed: toml::Value =
+            toml::from_str(&content).map_err(|e| format!("Failed to parse Cargo.lock: {}", e))?;
 
         let mut deps = Vec::new();
 
@@ -1010,7 +1016,10 @@ impl SupplyChainAnalyzer {
                 let name = pkg.get("name").and_then(|v| v.as_str()).unwrap_or("");
                 let version = pkg.get("version").and_then(|v| v.as_str()).unwrap_or("");
                 let source = pkg.get("source").and_then(|v| v.as_str()).map(String::from);
-                let checksum = pkg.get("checksum").and_then(|v| v.as_str()).map(String::from);
+                let checksum = pkg
+                    .get("checksum")
+                    .and_then(|v| v.as_str())
+                    .map(String::from);
 
                 if !name.is_empty() {
                     let mut dep = Dependency::new(name, version, Ecosystem::Cargo);
@@ -1070,7 +1079,10 @@ impl SupplyChainAnalyzer {
         }
 
         // Parse optionalDependencies
-        if let Some(opt_deps) = parsed.get("optionalDependencies").and_then(|v| v.as_object()) {
+        if let Some(opt_deps) = parsed
+            .get("optionalDependencies")
+            .and_then(|v| v.as_object())
+        {
             for (name, value) in opt_deps {
                 let version = value.as_str().unwrap_or("*");
                 let mut dep = Dependency::new(name, version, Ecosystem::Npm);
@@ -1147,8 +1159,8 @@ impl SupplyChainAnalyzer {
 
     /// Parse go.mod for Go dependencies
     pub fn parse_go_mod(&self, path: &Path) -> Result<Vec<Dependency>, String> {
-        let content = std::fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read go.mod: {}", e))?;
+        let content =
+            std::fs::read_to_string(path).map_err(|e| format!("Failed to read go.mod: {}", e))?;
 
         let mut deps = Vec::new();
         let mut in_require = false;
@@ -1175,7 +1187,11 @@ impl SupplyChainAnalyzer {
 
             // Single-line require
             if line.starts_with("require ") && !line.contains('(') {
-                let parts: Vec<&str> = line.strip_prefix("require ").unwrap().split_whitespace().collect();
+                let parts: Vec<&str> = line
+                    .strip_prefix("require ")
+                    .unwrap()
+                    .split_whitespace()
+                    .collect();
                 if parts.len() >= 2 {
                     let name = parts[0];
                     let version = parts[1];
@@ -1236,7 +1252,13 @@ impl SupplyChainAnalyzer {
         }
     }
 
-    fn create_sbom(&self, project_name: &str, project_version: &str, deps: Vec<Dependency>, format: SBOMFormat) -> SBOM {
+    fn create_sbom(
+        &self,
+        project_name: &str,
+        project_version: &str,
+        deps: Vec<Dependency>,
+        format: SBOMFormat,
+    ) -> SBOM {
         let timestamp = chrono::Utc::now().to_rfc3339();
         let serial = format!("urn:uuid:{}", uuid::Uuid::new_v4());
 
@@ -1251,31 +1273,41 @@ impl SupplyChainAnalyzer {
             external_references: Vec::new(),
         };
 
-        let components: Vec<SBOMComponent> = deps.iter().map(|dep| {
-            SBOMComponent {
+        let components: Vec<SBOMComponent> = deps
+            .iter()
+            .map(|dep| SBOMComponent {
                 bom_ref: format!("{}@{}", dep.name, dep.version),
                 component_type: "library".to_string(),
                 name: dep.name.clone(),
                 version: dep.version.clone(),
                 purl: Some(dep.purl()),
                 licenses: dep.license.iter().cloned().collect(),
-                hashes: dep.checksum.iter().map(|h| SBOMHash {
-                    alg: "SHA-256".to_string(),
-                    content: h.clone(),
-                }).collect(),
-                external_references: dep.source.iter().map(|s| SBOMExternalRef {
-                    ref_type: "vcs".to_string(),
-                    url: s.clone(),
-                }).collect(),
-            }
-        }).collect();
+                hashes: dep
+                    .checksum
+                    .iter()
+                    .map(|h| SBOMHash {
+                        alg: "SHA-256".to_string(),
+                        content: h.clone(),
+                    })
+                    .collect(),
+                external_references: dep
+                    .source
+                    .iter()
+                    .map(|s| SBOMExternalRef {
+                        ref_type: "vcs".to_string(),
+                        url: s.clone(),
+                    })
+                    .collect(),
+            })
+            .collect();
 
-        let dependencies: Vec<SBOMDependency> = deps.iter().map(|dep| {
-            SBOMDependency {
+        let dependencies: Vec<SBOMDependency> = deps
+            .iter()
+            .map(|dep| SBOMDependency {
                 ref_id: format!("{}@{}", dep.name, dep.version),
                 depends_on: dep.dependencies.clone(),
-            }
-        }).collect();
+            })
+            .collect();
 
         SBOM {
             format,
@@ -1348,8 +1380,7 @@ impl SupplyChainAnalyzer {
 
         // Phase C1: Use compact or pretty JSON based on parameter
         if compact {
-            serde_json::to_string(&output)
-                .map_err(|e| format!("Failed to render CycloneDX: {}", e))
+            serde_json::to_string(&output).map_err(|e| format!("Failed to render CycloneDX: {}", e))
         } else {
             serde_json::to_string_pretty(&output)
                 .map_err(|e| format!("Failed to render CycloneDX: {}", e))
@@ -1357,9 +1388,15 @@ impl SupplyChainAnalyzer {
     }
 
     fn render_spdx(&self, sbom: &SBOM, compact: bool) -> Result<String, String> {
-        let doc_namespace = format!("https://spdx.org/spdxdocs/{}-{}",
-            sbom.metadata.component.as_ref().map(|c| c.name.as_str()).unwrap_or("project"),
-            sbom.serial_number);
+        let doc_namespace = format!(
+            "https://spdx.org/spdxdocs/{}-{}",
+            sbom.metadata
+                .component
+                .as_ref()
+                .map(|c| c.name.as_str())
+                .unwrap_or("project"),
+            sbom.serial_number
+        );
 
         let output = serde_json::json!({
             "spdxVersion": format!("SPDX-{}", sbom.spec_version),
@@ -1401,8 +1438,7 @@ impl SupplyChainAnalyzer {
 
         // Phase C1: Use compact or pretty JSON based on parameter
         if compact {
-            serde_json::to_string(&output)
-                .map_err(|e| format!("Failed to render SPDX: {}", e))
+            serde_json::to_string(&output).map_err(|e| format!("Failed to render SPDX: {}", e))
         } else {
             serde_json::to_string_pretty(&output)
                 .map_err(|e| format!("Failed to render SPDX: {}", e))
@@ -1411,29 +1447,33 @@ impl SupplyChainAnalyzer {
 
     /// Check dependencies for vulnerabilities using OSV API
     pub fn check_vulnerabilities(&self, deps: &[Dependency]) -> Vec<DependencyVuln> {
-        deps.iter().filter_map(|dep| {
-            let vulns = self.query_osv(dep);
-            if vulns.is_empty() {
-                None
-            } else {
-                let risk_level = vulns.iter()
-                    .map(|v| v.severity)
-                    .max()
-                    .unwrap_or(VulnSeverity::Unknown);
+        deps.iter()
+            .filter_map(|dep| {
+                let vulns = self.query_osv(dep);
+                if vulns.is_empty() {
+                    None
+                } else {
+                    let risk_level = vulns
+                        .iter()
+                        .map(|v| v.severity)
+                        .max()
+                        .unwrap_or(VulnSeverity::Unknown);
 
-                let upgrade_to = vulns.iter()
-                    .filter_map(|v| v.fixed_versions.first())
-                    .next()
-                    .cloned();
+                    let upgrade_to = vulns
+                        .iter()
+                        .filter_map(|v| v.fixed_versions.first())
+                        .next()
+                        .cloned();
 
-                Some(DependencyVuln {
-                    dependency: dep.clone(),
-                    vulnerabilities: vulns,
-                    risk_level,
-                    upgrade_to,
-                })
-            }
-        }).collect()
+                    Some(DependencyVuln {
+                        dependency: dep.clone(),
+                        vulnerabilities: vulns,
+                        risk_level,
+                        upgrade_to,
+                    })
+                }
+            })
+            .collect()
     }
 
     /// Query OSV API for vulnerabilities
@@ -1525,7 +1565,8 @@ impl SupplyChainAnalyzer {
             }
             Ecosystem::Go => {
                 // net/http in Go has various vulnerabilities based on version
-                if dep.name.contains("golang.org/x/net") && self.version_lt(&dep.version, "0.17.0") {
+                if dep.name.contains("golang.org/x/net") && self.version_lt(&dep.version, "0.17.0")
+                {
                     vulns.push(Vulnerability {
                         id: "GO-2023-2102".to_string(),
                         aliases: vec!["CVE-2023-44487".to_string()],
@@ -1554,24 +1595,34 @@ impl SupplyChainAnalyzer {
         let than = than.trim_start_matches(['=', '>', '<', '~', '^', 'v']);
 
         // Split into parts
-        let v_parts: Vec<u32> = version.split(['.', '-'])
+        let v_parts: Vec<u32> = version
+            .split(['.', '-'])
             .filter_map(|p| p.parse().ok())
             .collect();
-        let t_parts: Vec<u32> = than.split(['.', '-'])
+        let t_parts: Vec<u32> = than
+            .split(['.', '-'])
             .filter_map(|p| p.parse().ok())
             .collect();
 
         // Compare
         for (v, t) in v_parts.iter().zip(t_parts.iter()) {
-            if v < t { return true; }
-            if v > t { return false; }
+            if v < t {
+                return true;
+            }
+            if v > t {
+                return false;
+            }
         }
 
         v_parts.len() < t_parts.len()
     }
 
     /// Check license compliance
-    pub fn check_licenses(&self, deps: &[Dependency], project_license: Option<&str>) -> LicenseReport {
+    pub fn check_licenses(
+        &self,
+        deps: &[Dependency],
+        project_license: Option<&str>,
+    ) -> LicenseReport {
         let mut by_license: HashMap<String, Vec<String>> = HashMap::new();
         let mut issues = Vec::new();
         let mut copyleft = Vec::new();
@@ -1581,7 +1632,8 @@ impl SupplyChainAnalyzer {
         for dep in deps {
             let license_id = dep.license.clone().unwrap_or_else(|| "UNKNOWN".to_string());
 
-            by_license.entry(license_id.clone())
+            by_license
+                .entry(license_id.clone())
                 .or_default()
                 .push(dep.name.clone());
 
@@ -1596,8 +1648,13 @@ impl SupplyChainAnalyzer {
                                 dependency: dep.name.clone(),
                                 license: license_id.clone(),
                                 issue_type: LicenseIssueType::Copyleft,
-                                message: format!("Copyleft license '{}' may require source disclosure", license_id),
-                                recommendation: "Review copyleft obligations or find alternative dependency".to_string(),
+                                message: format!(
+                                    "Copyleft license '{}' may require source disclosure",
+                                    license_id
+                                ),
+                                recommendation:
+                                    "Review copyleft obligations or find alternative dependency"
+                                        .to_string(),
                             });
                         }
                     }
@@ -1611,7 +1668,8 @@ impl SupplyChainAnalyzer {
                     license: license_id.clone(),
                     issue_type: LicenseIssueType::NoLicense,
                     message: "No license information available".to_string(),
-                    recommendation: "Verify the license manually before using in production".to_string(),
+                    recommendation: "Verify the license manually before using in production"
+                        .to_string(),
                 });
             } else {
                 unknown.push(dep.name.clone());
@@ -1627,7 +1685,11 @@ impl SupplyChainAnalyzer {
 
         let summary = format!(
             "{} dependencies: {} permissive, {} copyleft, {} unknown, {} issues",
-            deps.len(), permissive.len(), copyleft.len(), unknown.len(), issues.len()
+            deps.len(),
+            permissive.len(),
+            copyleft.len(),
+            unknown.len(),
+            issues.len()
         );
 
         LicenseReport {
@@ -1665,32 +1727,44 @@ impl SupplyChainAnalyzer {
 
     /// Find upgrade path for vulnerable dependencies
     pub fn find_upgrade_path(&self, vulns: &[DependencyVuln]) -> Vec<UpgradeRecommendation> {
-        vulns.iter().filter_map(|v| {
-            let recommended = v.upgrade_to.clone().or_else(|| {
-                v.vulnerabilities.iter()
-                    .filter_map(|vuln| vuln.fixed_versions.first())
-                    .next()
-                    .cloned()
-            })?;
+        vulns
+            .iter()
+            .filter_map(|v| {
+                let recommended = v.upgrade_to.clone().or_else(|| {
+                    v.vulnerabilities
+                        .iter()
+                        .filter_map(|vuln| vuln.fixed_versions.first())
+                        .next()
+                        .cloned()
+                })?;
 
-            Some(UpgradeRecommendation {
-                dependency: v.dependency.name.clone(),
-                current_version: v.dependency.version.clone(),
-                recommended_version: recommended,
-                reason: UpgradeReason::Security,
-                breaking_changes: self.has_major_version_change(&v.dependency.version,
-                    v.upgrade_to.as_deref().unwrap_or("0.0.0")),
-                vulnerabilities_fixed: v.vulnerabilities.iter().map(|vuln| vuln.id.clone()).collect(),
+                Some(UpgradeRecommendation {
+                    dependency: v.dependency.name.clone(),
+                    current_version: v.dependency.version.clone(),
+                    recommended_version: recommended,
+                    reason: UpgradeReason::Security,
+                    breaking_changes: self.has_major_version_change(
+                        &v.dependency.version,
+                        v.upgrade_to.as_deref().unwrap_or("0.0.0"),
+                    ),
+                    vulnerabilities_fixed: v
+                        .vulnerabilities
+                        .iter()
+                        .map(|vuln| vuln.id.clone())
+                        .collect(),
+                })
             })
-        }).collect()
+            .collect()
     }
 
     fn has_major_version_change(&self, from: &str, to: &str) -> bool {
-        let from_major: Option<u32> = from.trim_start_matches(['v', '^', '~', '=', '>', '<'])
+        let from_major: Option<u32> = from
+            .trim_start_matches(['v', '^', '~', '=', '>', '<'])
             .split('.')
             .next()
             .and_then(|s| s.parse().ok());
-        let to_major: Option<u32> = to.trim_start_matches(['v', '^', '~', '=', '>', '<'])
+        let to_major: Option<u32> = to
+            .trim_start_matches(['v', '^', '~', '=', '>', '<'])
             .split('.')
             .next()
             .and_then(|s| s.parse().ok());
@@ -1740,7 +1814,9 @@ mod tests {
     fn test_ecosystem_manifest_files() {
         assert!(Ecosystem::Cargo.manifest_files().contains(&"Cargo.toml"));
         assert!(Ecosystem::Npm.manifest_files().contains(&"package.json"));
-        assert!(Ecosystem::PyPI.manifest_files().contains(&"requirements.txt"));
+        assert!(Ecosystem::PyPI
+            .manifest_files()
+            .contains(&"requirements.txt"));
         assert!(Ecosystem::Go.manifest_files().contains(&"go.mod"));
     }
 
@@ -1786,12 +1862,16 @@ cc = "1.0"
         create_temp_file(&dir, "Cargo.toml", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_cargo_toml(&dir.path().join("Cargo.toml")).unwrap();
+        let deps = analyzer
+            .parse_cargo_toml(&dir.path().join("Cargo.toml"))
+            .unwrap();
 
         assert!(deps.len() >= 4);
         assert!(deps.iter().any(|d| d.name == "serde" && d.version == "1.0"));
         assert!(deps.iter().any(|d| d.name == "tokio" && d.version == "1.0"));
-        assert!(deps.iter().any(|d| d.name == "criterion" && d.dev_dependency));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "criterion" && d.dev_dependency));
     }
 
     #[test]
@@ -1804,7 +1884,9 @@ my-crate = { git = "https://github.com/example/my-crate" }
         create_temp_file(&dir, "Cargo.toml", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_cargo_toml(&dir.path().join("Cargo.toml")).unwrap();
+        let deps = analyzer
+            .parse_cargo_toml(&dir.path().join("Cargo.toml"))
+            .unwrap();
 
         assert_eq!(deps.len(), 1);
         assert!(deps[0].version.starts_with("git:"));
@@ -1820,7 +1902,9 @@ serde_json = { version = "1.0", optional = true }
         create_temp_file(&dir, "Cargo.toml", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_cargo_toml(&dir.path().join("Cargo.toml")).unwrap();
+        let deps = analyzer
+            .parse_cargo_toml(&dir.path().join("Cargo.toml"))
+            .unwrap();
 
         assert_eq!(deps.len(), 1);
         assert!(deps[0].optional);
@@ -1849,7 +1933,9 @@ serde_json = { version = "1.0", optional = true }
         create_temp_file(&dir, "package.json", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_package_json(&dir.path().join("package.json")).unwrap();
+        let deps = analyzer
+            .parse_package_json(&dir.path().join("package.json"))
+            .unwrap();
 
         assert_eq!(deps.len(), 3);
         assert!(deps.iter().any(|d| d.name == "lodash" && !d.dev_dependency));
@@ -1873,7 +1959,9 @@ serde_json = { version = "1.0", optional = true }
         create_temp_file(&dir, "package.json", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_package_json(&dir.path().join("package.json")).unwrap();
+        let deps = analyzer
+            .parse_package_json(&dir.path().join("package.json"))
+            .unwrap();
 
         assert_eq!(deps.len(), 2);
         assert!(deps.iter().all(|d| d.optional));
@@ -1898,12 +1986,20 @@ celery[redis]>=5.0.0
         create_temp_file(&dir, "requirements.txt", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_requirements_txt(&dir.path().join("requirements.txt")).unwrap();
+        let deps = analyzer
+            .parse_requirements_txt(&dir.path().join("requirements.txt"))
+            .unwrap();
 
         assert_eq!(deps.len(), 4);
-        assert!(deps.iter().any(|d| d.name == "requests" && d.version == "==2.28.0"));
-        assert!(deps.iter().any(|d| d.name == "flask" && d.version == ">=2.0.0"));
-        assert!(deps.iter().any(|d| d.name == "celery" && d.version == ">=5.0.0"));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "requests" && d.version == "==2.28.0"));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "flask" && d.version == ">=2.0.0"));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "celery" && d.version == ">=5.0.0"));
     }
 
     #[test]
@@ -1917,11 +2013,17 @@ numpy>=1.0  # another comment
         create_temp_file(&dir, "requirements.txt", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_requirements_txt(&dir.path().join("requirements.txt")).unwrap();
+        let deps = analyzer
+            .parse_requirements_txt(&dir.path().join("requirements.txt"))
+            .unwrap();
 
         assert_eq!(deps.len(), 2);
-        assert!(deps.iter().any(|d| d.name == "requests" && d.version == "*"));
-        assert!(deps.iter().any(|d| d.name == "numpy" && d.version == ">=1.0"));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "requests" && d.version == "*"));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "numpy" && d.version == ">=1.0"));
     }
 
     // ========================================================================
@@ -1950,8 +2052,12 @@ require github.com/single/dep v1.0.0
         let deps = analyzer.parse_go_mod(&dir.path().join("go.mod")).unwrap();
 
         assert_eq!(deps.len(), 4);
-        assert!(deps.iter().any(|d| d.name == "github.com/gin-gonic/gin" && d.version == "v1.9.0"));
-        assert!(deps.iter().any(|d| d.name == "github.com/stretchr/testify" && d.optional));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "github.com/gin-gonic/gin" && d.version == "v1.9.0"));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "github.com/stretchr/testify" && d.optional));
         assert!(deps.iter().any(|d| d.name == "github.com/single/dep"));
     }
 
@@ -1973,7 +2079,9 @@ serde = "1.0"
         create_temp_file(&dir, "Cargo.toml", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let sbom = analyzer.generate_sbom(dir.path(), "test", "0.1.0", SBOMFormat::CycloneDX, false).unwrap();
+        let sbom = analyzer
+            .generate_sbom(dir.path(), "test", "0.1.0", SBOMFormat::CycloneDX, false)
+            .unwrap();
 
         assert!(sbom.contains("CycloneDX"));
         assert!(sbom.contains("\"specVersion\": \"1.5\""));
@@ -1994,7 +2102,9 @@ tokio = "1.0"
         create_temp_file(&dir, "Cargo.toml", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let sbom = analyzer.generate_sbom(dir.path(), "test", "1.0.0", SBOMFormat::SPDX, false).unwrap();
+        let sbom = analyzer
+            .generate_sbom(dir.path(), "test", "1.0.0", SBOMFormat::SPDX, false)
+            .unwrap();
 
         assert!(sbom.contains("SPDX-2.3"));
         assert!(sbom.contains("tokio"));
@@ -2008,7 +2118,9 @@ tokio = "1.0"
         create_temp_file(&dir, "package.json", content);
 
         let analyzer = SupplyChainAnalyzer::new();
-        let sbom = analyzer.generate_sbom(dir.path(), "test", "1.0.0", SBOMFormat::JSON, false).unwrap();
+        let sbom = analyzer
+            .generate_sbom(dir.path(), "test", "1.0.0", SBOMFormat::JSON, false)
+            .unwrap();
 
         let parsed: serde_json::Value = serde_json::from_str(&sbom).unwrap();
         assert!(parsed.get("components").is_some());
@@ -2022,24 +2134,23 @@ tokio = "1.0"
     #[test]
     fn test_check_vulnerabilities_lodash() {
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = vec![
-            Dependency::new("lodash", "4.17.0", Ecosystem::Npm),
-        ];
+        let deps = vec![Dependency::new("lodash", "4.17.0", Ecosystem::Npm)];
 
         let vulns = analyzer.check_vulnerabilities(&deps);
 
         assert_eq!(vulns.len(), 1);
         assert_eq!(vulns[0].dependency.name, "lodash");
         assert!(!vulns[0].vulnerabilities.is_empty());
-        assert!(vulns[0].vulnerabilities.iter().any(|v| v.id.contains("GHSA")));
+        assert!(vulns[0]
+            .vulnerabilities
+            .iter()
+            .any(|v| v.id.contains("GHSA")));
     }
 
     #[test]
     fn test_check_vulnerabilities_safe_version() {
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = vec![
-            Dependency::new("lodash", "4.17.21", Ecosystem::Npm),
-        ];
+        let deps = vec![Dependency::new("lodash", "4.17.21", Ecosystem::Npm)];
 
         let vulns = analyzer.check_vulnerabilities(&deps);
         assert!(vulns.is_empty());
@@ -2057,25 +2168,27 @@ tokio = "1.0"
     #[test]
     fn test_check_vulnerabilities_requests() {
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = vec![
-            Dependency::new("requests", "2.28.0", Ecosystem::PyPI),
-        ];
+        let deps = vec![Dependency::new("requests", "2.28.0", Ecosystem::PyPI)];
 
         let vulns = analyzer.check_vulnerabilities(&deps);
         assert_eq!(vulns.len(), 1);
-        assert!(vulns[0].vulnerabilities.iter().any(|v| v.aliases.contains(&"CVE-2023-32681".to_string())));
+        assert!(vulns[0]
+            .vulnerabilities
+            .iter()
+            .any(|v| v.aliases.contains(&"CVE-2023-32681".to_string())));
     }
 
     #[test]
     fn test_check_vulnerabilities_regex_crate() {
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = vec![
-            Dependency::new("regex", "1.5.0", Ecosystem::Cargo),
-        ];
+        let deps = vec![Dependency::new("regex", "1.5.0", Ecosystem::Cargo)];
 
         let vulns = analyzer.check_vulnerabilities(&deps);
         assert_eq!(vulns.len(), 1);
-        assert!(vulns[0].vulnerabilities.iter().any(|v| v.id.contains("RUSTSEC")));
+        assert!(vulns[0]
+            .vulnerabilities
+            .iter()
+            .any(|v| v.id.contains("RUSTSEC")));
     }
 
     // ========================================================================
@@ -2118,7 +2231,10 @@ tokio = "1.0"
 
         assert!(report.copyleft_deps.contains(&"some-lib".to_string()));
         assert!(!report.issues.is_empty());
-        assert!(report.issues.iter().any(|i| i.issue_type == LicenseIssueType::Copyleft));
+        assert!(report
+            .issues
+            .iter()
+            .any(|i| i.issue_type == LicenseIssueType::Copyleft));
     }
 
     #[test]
@@ -2128,8 +2244,13 @@ tokio = "1.0"
 
         let report = analyzer.check_licenses(&[dep], None);
 
-        assert!(report.unknown_license_deps.contains(&"mystery-lib".to_string()));
-        assert!(report.issues.iter().any(|i| i.issue_type == LicenseIssueType::NoLicense));
+        assert!(report
+            .unknown_license_deps
+            .contains(&"mystery-lib".to_string()));
+        assert!(report
+            .issues
+            .iter()
+            .any(|i| i.issue_type == LicenseIssueType::NoLicense));
     }
 
     #[test]
@@ -2155,9 +2276,7 @@ tokio = "1.0"
     #[test]
     fn test_find_upgrade_path() {
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = vec![
-            Dependency::new("lodash", "4.17.0", Ecosystem::Npm),
-        ];
+        let deps = vec![Dependency::new("lodash", "4.17.0", Ecosystem::Npm)];
 
         let vulns = analyzer.check_vulnerabilities(&deps);
         let upgrades = analyzer.find_upgrade_path(&vulns);
@@ -2210,15 +2329,23 @@ tokio = "1.0"
         let dir = TempDir::new().unwrap();
 
         // Create Cargo.toml
-        create_temp_file(&dir, "Cargo.toml", r#"
+        create_temp_file(
+            &dir,
+            "Cargo.toml",
+            r#"
 [dependencies]
 serde = "1.0"
-"#);
+"#,
+        );
 
         // Create package.json
-        create_temp_file(&dir, "package.json", r#"
+        create_temp_file(
+            &dir,
+            "package.json",
+            r#"
 { "dependencies": { "lodash": "^4.17.21" } }
-"#);
+"#,
+        );
 
         let analyzer = SupplyChainAnalyzer::new();
         let deps = analyzer.parse_dependencies(dir.path()).unwrap();
@@ -2238,7 +2365,9 @@ serde = "1.0"
         create_temp_file(&dir, "Cargo.toml", "[package]\nname = \"empty\"");
 
         let analyzer = SupplyChainAnalyzer::new();
-        let deps = analyzer.parse_cargo_toml(&dir.path().join("Cargo.toml")).unwrap();
+        let deps = analyzer
+            .parse_cargo_toml(&dir.path().join("Cargo.toml"))
+            .unwrap();
 
         assert!(deps.is_empty());
     }
@@ -2276,22 +2405,26 @@ thiserror = "1.0"
         let analyzer = SupplyChainAnalyzer::new();
 
         // Generate compact SBOM
-        let compact = analyzer.generate_sbom(
-            dir.path(),
-            "test-project",
-            "0.1.0",
-            SBOMFormat::CycloneDX,
-            true,  // compact
-        ).unwrap();
+        let compact = analyzer
+            .generate_sbom(
+                dir.path(),
+                "test-project",
+                "0.1.0",
+                SBOMFormat::CycloneDX,
+                true, // compact
+            )
+            .unwrap();
 
         // Generate pretty SBOM
-        let pretty = analyzer.generate_sbom(
-            dir.path(),
-            "test-project",
-            "0.1.0",
-            SBOMFormat::CycloneDX,
-            false,  // not compact
-        ).unwrap();
+        let pretty = analyzer
+            .generate_sbom(
+                dir.path(),
+                "test-project",
+                "0.1.0",
+                SBOMFormat::CycloneDX,
+                false, // not compact
+            )
+            .unwrap();
 
         // Compact should be smaller (at least 20% smaller due to removed whitespace)
         assert!(
@@ -2302,8 +2435,10 @@ thiserror = "1.0"
         );
 
         // Verify both are valid JSON
-        let _: serde_json::Value = serde_json::from_str(&compact).expect("Compact should be valid JSON");
-        let _: serde_json::Value = serde_json::from_str(&pretty).expect("Pretty should be valid JSON");
+        let _: serde_json::Value =
+            serde_json::from_str(&compact).expect("Compact should be valid JSON");
+        let _: serde_json::Value =
+            serde_json::from_str(&pretty).expect("Pretty should be valid JSON");
     }
 
     // ========================================================================
@@ -2313,7 +2448,10 @@ thiserror = "1.0"
     #[test]
     fn test_parse_cargo_toml_package_license() {
         let content = "[package]\nlicense = \"MIT\"";
-        assert_eq!(SupplyChainAnalyzer::extract_cargo_project_license(content), Some("MIT".to_string()));
+        assert_eq!(
+            SupplyChainAnalyzer::extract_cargo_project_license(content),
+            Some("MIT".to_string())
+        );
     }
 
     #[test]
@@ -2328,7 +2466,10 @@ thiserror = "1.0"
     #[test]
     fn test_parse_cargo_toml_no_license() {
         let content = "[package]\nname = \"test\"";
-        assert_eq!(SupplyChainAnalyzer::extract_cargo_project_license(content), None);
+        assert_eq!(
+            SupplyChainAnalyzer::extract_cargo_project_license(content),
+            None
+        );
     }
 
     // ========================================================================
@@ -2338,14 +2479,21 @@ thiserror = "1.0"
     #[test]
     fn test_parse_package_json_license_string() {
         let content = r#"{"license": "MIT"}"#;
-        assert_eq!(SupplyChainAnalyzer::extract_npm_project_license(content), Some("MIT".to_string()));
+        assert_eq!(
+            SupplyChainAnalyzer::extract_npm_project_license(content),
+            Some("MIT".to_string())
+        );
     }
 
     #[test]
     fn test_parse_package_json_license_object() {
         // Deprecated format but still used
-        let content = r#"{"license": {"type": "MIT", "url": "https://opensource.org/licenses/MIT"}}"#;
-        assert_eq!(SupplyChainAnalyzer::extract_npm_project_license(content), Some("MIT".to_string()));
+        let content =
+            r#"{"license": {"type": "MIT", "url": "https://opensource.org/licenses/MIT"}}"#;
+        assert_eq!(
+            SupplyChainAnalyzer::extract_npm_project_license(content),
+            Some("MIT".to_string())
+        );
     }
 
     #[test]
@@ -2361,7 +2509,10 @@ thiserror = "1.0"
     #[test]
     fn test_parse_package_json_no_license() {
         let content = r#"{"name": "test"}"#;
-        assert_eq!(SupplyChainAnalyzer::extract_npm_project_license(content), None);
+        assert_eq!(
+            SupplyChainAnalyzer::extract_npm_project_license(content),
+            None
+        );
     }
 
     // ========================================================================
@@ -2388,8 +2539,12 @@ thiserror = "1.0"
         let deps = analyzer.parse_package_lock_content(content).unwrap();
 
         assert_eq!(deps.len(), 2);
-        assert!(deps.iter().any(|d| d.name == "lodash" && d.license == Some("MIT".to_string())));
-        assert!(deps.iter().any(|d| d.name == "axios" && d.license == Some("MIT".to_string())));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "lodash" && d.license == Some("MIT".to_string())));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "axios" && d.license == Some("MIT".to_string())));
     }
 
     #[test]
@@ -2412,7 +2567,9 @@ thiserror = "1.0"
         let analyzer = SupplyChainAnalyzer::new();
         let deps = analyzer.parse_package_lock_content(content).unwrap();
 
-        assert!(deps.iter().any(|d| d.name == "express" && d.license == Some("MIT".to_string())));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "express" && d.license == Some("MIT".to_string())));
     }
 
     #[test]
@@ -2449,17 +2606,27 @@ thiserror = "1.0"
 
         analyzer.enrich_npm_licenses(&mut deps);
 
-        assert_eq!(deps[0].license, Some("MIT".to_string()), "lodash should be MIT");
-        assert_eq!(deps[1].license, Some("MIT".to_string()), "express should be MIT");
-        assert_eq!(deps[2].license, Some("MIT".to_string()), "react should be MIT");
+        assert_eq!(
+            deps[0].license,
+            Some("MIT".to_string()),
+            "lodash should be MIT"
+        );
+        assert_eq!(
+            deps[1].license,
+            Some("MIT".to_string()),
+            "express should be MIT"
+        );
+        assert_eq!(
+            deps[2].license,
+            Some("MIT".to_string()),
+            "react should be MIT"
+        );
     }
 
     #[test]
     fn test_npm_enrichment_does_not_overwrite_existing() {
         let analyzer = SupplyChainAnalyzer::new();
-        let mut deps = vec![
-            Dependency::new("lodash", "4.17.21", Ecosystem::Npm),
-        ];
+        let mut deps = vec![Dependency::new("lodash", "4.17.21", Ecosystem::Npm)];
         deps[0].license = Some("Apache-2.0".to_string()); // Set a different license
 
         analyzer.enrich_npm_licenses(&mut deps);
@@ -2509,7 +2676,9 @@ thiserror = "1.0"
         let deps = analyzer.parse_dependencies(dir.path()).unwrap();
 
         // Should have license from package-lock.json
-        assert!(deps.iter().any(|d| d.name == "lodash" && d.license == Some("MIT".to_string())));
+        assert!(deps
+            .iter()
+            .any(|d| d.name == "lodash" && d.license == Some("MIT".to_string())));
     }
 
     #[test]
@@ -2517,18 +2686,25 @@ thiserror = "1.0"
         let dir = TempDir::new().unwrap();
 
         // Create package.json with deps but no license in lock
-        let pkg_content = r#"{ "dependencies": { "express": "^4.18.2", "unknown-pkg": "^1.0.0" } }"#;
+        let pkg_content =
+            r#"{ "dependencies": { "express": "^4.18.2", "unknown-pkg": "^1.0.0" } }"#;
         create_temp_file(&dir, "package.json", pkg_content);
 
         let analyzer = SupplyChainAnalyzer::new();
         let deps = analyzer.parse_dependencies(dir.path()).unwrap();
 
         // express should be enriched from database
-        assert!(deps.iter().any(|d| d.name == "express" && d.license == Some("MIT".to_string())),
-            "express should have MIT license from enrichment database");
+        assert!(
+            deps.iter()
+                .any(|d| d.name == "express" && d.license == Some("MIT".to_string())),
+            "express should have MIT license from enrichment database"
+        );
         // unknown-pkg should remain without license
-        assert!(deps.iter().any(|d| d.name == "unknown-pkg" && d.license.is_none()),
-            "unknown-pkg should have no license");
+        assert!(
+            deps.iter()
+                .any(|d| d.name == "unknown-pkg" && d.license.is_none()),
+            "unknown-pkg should have no license"
+        );
     }
 
     #[test]
@@ -2560,7 +2736,10 @@ tokio = "1.0"
 
         // All 4 packages should have licenses (serde, tokio from Cargo db; lodash, express from npm db)
         assert_eq!(total, 4, "Should have 4 dependencies total");
-        assert_eq!(with_license, 4, "All 4 packages should have licenses from enrichment");
+        assert_eq!(
+            with_license, 4,
+            "All 4 packages should have licenses from enrichment"
+        );
     }
 
     #[test]
@@ -2580,8 +2759,12 @@ serde = "1.0"
 
         // Test compact for all formats
         for format in [SBOMFormat::CycloneDX, SBOMFormat::SPDX, SBOMFormat::JSON] {
-            let compact = analyzer.generate_sbom(dir.path(), "test", "0.1.0", format, true).unwrap();
-            let pretty = analyzer.generate_sbom(dir.path(), "test", "0.1.0", format, false).unwrap();
+            let compact = analyzer
+                .generate_sbom(dir.path(), "test", "0.1.0", format, true)
+                .unwrap();
+            let pretty = analyzer
+                .generate_sbom(dir.path(), "test", "0.1.0", format, false)
+                .unwrap();
 
             assert!(
                 compact.len() <= pretty.len(),

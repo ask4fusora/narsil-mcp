@@ -121,7 +121,9 @@ impl ToolHandler for GetSymbolHistoryHandler {
         let path = args.get_str("path").unwrap_or("");
         let symbol = args.get_str("symbol").unwrap_or("");
         let max_commits = args.get_u64_or("max_commits", 10) as usize;
-        engine.get_symbol_history(repo, path, symbol, max_commits).await
+        engine
+            .get_symbol_history(repo, path, symbol, max_commits)
+            .await
     }
 }
 

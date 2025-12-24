@@ -2,9 +2,9 @@
 
 > The blazing-fast, privacy-first MCP server for deep code intelligence
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org)
-[![Tests](https://img.shields.io/badge/tests-255%20passed-brightgreen.svg)](https://github.com/postrv/narsil-mcp)
+[![Tests](https://img.shields.io/badge/tests-359%20passed-brightgreen.svg)](https://github.com/postrv/narsil-mcp)
 [![MCP](https://img.shields.io/badge/MCP-compatible-blue.svg)](https://modelcontextprotocol.io)
 
 A Rust-powered MCP (Model Context Protocol) server providing AI assistants with deep code understanding through 74 specialized tools.
@@ -770,7 +770,7 @@ Benchmarked on Apple M1 (criterion.rs):
 ## Development
 
 ```bash
-# Run tests (255 tests)
+# Run tests (359 tests)
 cargo test
 
 # Run benchmarks (criterion.rs)
@@ -868,7 +868,7 @@ See [docs/IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md) for detaile
 
 ## What's New in 1.0
 
-This release marks production readiness with 255 tests, comprehensive benchmarks, and security hardening:
+This release marks production readiness with 359 tests, comprehensive benchmarks, and security hardening:
 
 - **Neural semantic search** - Find similar code using Voyage AI or OpenAI embeddings
 - **Type inference** - Infer types in Python/JavaScript/TypeScript without external tools
@@ -882,7 +882,12 @@ This release marks production readiness with 255 tests, comprehensive benchmarks
 
 ## License
 
-MIT
+Licensed under either of:
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
 
 ## Credits
 

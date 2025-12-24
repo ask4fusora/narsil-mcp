@@ -1,0 +1,92 @@
+# Pre-commit hooks for narsil-mcp
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Standard pre-commit hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(test-fixtures/|benches/fixtures/)
+      - id: end-of-file-fixer
+        exclude: ^(test-fixtures/|benches/fixtures/)
+      - id: check-yaml
+        args: [--unsafe]  # Allow custom tags in YAML (security rules use them)
+      - id: check-toml
+      - id: check-json
+        exclude: ^(test-fixtures/|frontend/)
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+        exclude: ^(pkg/|frontend/dist/)
+      - id: detect-private-key
+        exclude: ^(rules/|src/security_rules\.rs|src/security_config\.rs|test-fixtures/)
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Rust formatting
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all --
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-check
+        name: cargo check
+        entry: cargo check --all-features
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+  # Secrets detection
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        args: ['--no-banner']
+
+  # Markdown linting (optional, can be enabled)
+  # - repo: https://github.com/igorshubovych/markdownlint-cli
+  #   rev: v0.43.0
+  #   hooks:
+  #     - id: markdownlint
+  #       args: [--fix]
+  #       exclude: ^(CHANGELOG.md|docs/archive/)
+
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        args: [-x]
+        exclude: ^test-fixtures/
+
+  # YAML security rules validation
+  - repo: local
+    hooks:
+      - id: validate-security-rules
+        name: validate security rules
+        entry: python3 -c "import yaml, sys; [yaml.safe_load(open(f)) for f in sys.argv[1:]]"
+        language: system
+        files: ^rules/.*\.yaml$
+        pass_filenames: true
+
+# CI-specific settings
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+  autoupdate_commit_msg: |
+    [pre-commit.ci] pre-commit autoupdate
+  skip: [cargo-clippy, cargo-check]  # These are slow, run in CI instead

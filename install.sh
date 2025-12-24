@@ -70,7 +70,7 @@ install_binary() {
     local tmpdir
 
     tmpdir=$(mktemp -d)
-    trap "rm -rf $tmpdir" EXIT
+    trap 'rm -rf "$tmpdir"' EXIT
 
     local download_url="https://github.com/${REPO}/releases/download/${version}/${BINARY_NAME}-${platform}.tar.gz"
 
@@ -103,6 +103,7 @@ install_from_source() {
     if ! command -v cargo &> /dev/null; then
         echo -e "${YELLOW}Rust not found. Installing Rust...${NC}"
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        # shellcheck source=/dev/null
         source "$HOME/.cargo/env"
     fi
 
@@ -124,7 +125,7 @@ ask_features() {
     echo "  1) No  - MCP server only (smaller binary, ~30MB)"
     echo "  2) Yes - Include web visualization UI (~31MB)"
     echo ""
-    read -p "Choice [1]: " choice
+    read -rp "Choice [1]: " choice
     case "$choice" in
         2|y|Y|yes|Yes)
             echo "frontend"
@@ -154,9 +155,11 @@ configure_path() {
     esac
 
     if [ -n "$shell_rc" ] && ! grep -q "narsil-mcp" "$shell_rc" 2>/dev/null; then
-        echo "" >> "$shell_rc"
-        echo "# narsil-mcp" >> "$shell_rc"
-        echo "$path_line" >> "$shell_rc"
+        {
+            echo ""
+            echo "# narsil-mcp"
+            echo "$path_line"
+        } >> "$shell_rc"
         echo -e "${BLUE}Added ${INSTALL_DIR} to PATH in ${shell_rc}${NC}"
     fi
 }

@@ -45,7 +45,7 @@ pub enum SourceKind {
     /// HTTP request parameters, form data, URL params
     UserInput {
         /// Specific input type (query, body, header, cookie)
-        input_type: String
+        input_type: String,
     },
     /// File content read
     FileRead,
@@ -206,7 +206,9 @@ impl VulnerabilityKind {
             | VulnerabilityKind::XxeInjection => Some("A03:2021 - Injection"),
             VulnerabilityKind::Xss => Some("A03:2021 - Injection"),
             VulnerabilityKind::PathTraversal => Some("A01:2021 - Broken Access Control"),
-            VulnerabilityKind::InsecureDeserialization => Some("A08:2021 - Software and Data Integrity Failures"),
+            VulnerabilityKind::InsecureDeserialization => {
+                Some("A08:2021 - Software and Data Integrity Failures")
+            }
             VulnerabilityKind::OpenRedirect => Some("A01:2021 - Broken Access Control"),
             _ => None,
         }
@@ -506,8 +508,14 @@ impl TaintAnalysisResult {
 
         // Summary
         md.push_str("## Summary\n\n");
-        md.push_str(&format!("- **Files Analyzed**: {}\n", self.stats.files_analyzed));
-        md.push_str(&format!("- **Sources Found**: {}\n", self.stats.sources_found));
+        md.push_str(&format!(
+            "- **Files Analyzed**: {}\n",
+            self.stats.files_analyzed
+        ));
+        md.push_str(&format!(
+            "- **Sources Found**: {}\n",
+            self.stats.sources_found
+        ));
         md.push_str(&format!("- **Sinks Found**: {}\n", self.stats.sinks_found));
         md.push_str(&format!("- **Taint Flows**: {}\n", self.stats.flows_found));
         md.push_str(&format!(
@@ -668,7 +676,9 @@ impl TaintAnalyzer {
         // Python Flask/Django sources
         self.source_patterns.push(SourcePattern {
             name: "flask_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["python".to_string()],
             function_patterns: vec![],
             property_patterns: vec![
@@ -686,7 +696,9 @@ impl TaintAnalyzer {
 
         self.source_patterns.push(SourcePattern {
             name: "django_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["python".to_string()],
             function_patterns: vec![],
             property_patterns: vec![
@@ -702,7 +714,9 @@ impl TaintAnalyzer {
         // JavaScript/TypeScript Express sources
         self.source_patterns.push(SourcePattern {
             name: "express_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["javascript".to_string(), "typescript".to_string()],
             function_patterns: vec![],
             property_patterns: vec![
@@ -718,7 +732,9 @@ impl TaintAnalyzer {
         // Rust web framework sources
         self.source_patterns.push(SourcePattern {
             name: "actix_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["rust".to_string()],
             function_patterns: vec![
                 "web::Query".to_string(),
@@ -733,7 +749,9 @@ impl TaintAnalyzer {
         // Go http sources
         self.source_patterns.push(SourcePattern {
             name: "go_http_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["go".to_string()],
             function_patterns: vec![
                 "r.URL.Query".to_string(),
@@ -741,9 +759,7 @@ impl TaintAnalyzer {
                 "r.PostFormValue".to_string(),
                 "r.Header.Get".to_string(),
             ],
-            property_patterns: vec![
-                "r.Body".to_string(),
-            ],
+            property_patterns: vec!["r.Body".to_string()],
             confidence: Confidence::High,
         });
 
@@ -796,7 +812,9 @@ impl TaintAnalyzer {
         // PHP superglobals - user input
         self.source_patterns.push(SourcePattern {
             name: "php_superglobals".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["php".to_string()],
             function_patterns: vec![],
             property_patterns: vec![
@@ -829,7 +847,9 @@ impl TaintAnalyzer {
         // Java Servlet API sources
         self.source_patterns.push(SourcePattern {
             name: "java_servlet_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["java".to_string(), "kotlin".to_string()],
             function_patterns: vec![
                 "getParameter(".to_string(),
@@ -851,7 +871,9 @@ impl TaintAnalyzer {
         // Java Spring sources
         self.source_patterns.push(SourcePattern {
             name: "java_spring_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["java".to_string(), "kotlin".to_string()],
             function_patterns: vec![
                 "@RequestParam".to_string(),
@@ -867,7 +889,9 @@ impl TaintAnalyzer {
         // C# ASP.NET sources
         self.source_patterns.push(SourcePattern {
             name: "csharp_aspnet_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["csharp".to_string()],
             function_patterns: vec![],
             property_patterns: vec![
@@ -885,7 +909,9 @@ impl TaintAnalyzer {
         // C# ASP.NET Core sources
         self.source_patterns.push(SourcePattern {
             name: "csharp_aspnetcore_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["csharp".to_string()],
             function_patterns: vec![
                 "[FromQuery]".to_string(),
@@ -901,7 +927,9 @@ impl TaintAnalyzer {
         // Ruby Rails sources
         self.source_patterns.push(SourcePattern {
             name: "ruby_rails_request".to_string(),
-            kind: SourceKind::UserInput { input_type: "http".to_string() },
+            kind: SourceKind::UserInput {
+                input_type: "http".to_string(),
+            },
             languages: vec!["ruby".to_string()],
             function_patterns: vec![],
             property_patterns: vec![
@@ -1104,7 +1132,7 @@ impl TaintAnalyzer {
                 "popen(".to_string(),
                 "proc_open(".to_string(),
                 "pcntl_exec(".to_string(),
-                "`".to_string(),  // backticks
+                "`".to_string(), // backticks
             ],
             dangerous_arg: 0,
         });
@@ -1313,7 +1341,7 @@ impl TaintAnalyzer {
             function_patterns: vec![
                 "system(".to_string(),
                 "exec(".to_string(),
-                "`".to_string(),  // backticks
+                "`".to_string(), // backticks
                 "%x(".to_string(),
                 "IO.popen(".to_string(),
                 "Open3.".to_string(),
@@ -1433,20 +1461,14 @@ impl TaintAnalyzer {
 
         self.sanitizer_patterns.push(SanitizerPattern {
             name: "php_path_sanitize".to_string(),
-            function_patterns: vec![
-                "basename(".to_string(),
-                "realpath(".to_string(),
-            ],
+            function_patterns: vec!["basename(".to_string(), "realpath(".to_string()],
             sanitizes_for: vec![SinkKind::FilePath, SinkKind::FileWrite],
             languages: vec!["php".to_string()],
         });
 
         self.sanitizer_patterns.push(SanitizerPattern {
             name: "php_command_sanitize".to_string(),
-            function_patterns: vec![
-                "escapeshellarg(".to_string(),
-                "escapeshellcmd(".to_string(),
-            ],
+            function_patterns: vec!["escapeshellarg(".to_string(), "escapeshellcmd(".to_string()],
             sanitizes_for: vec![SinkKind::CommandExec],
             languages: vec!["php".to_string()],
         });
@@ -1537,21 +1559,14 @@ impl TaintAnalyzer {
 
         self.sanitizer_patterns.push(SanitizerPattern {
             name: "ruby_command_sanitize".to_string(),
-            function_patterns: vec![
-                "Shellwords.escape(".to_string(),
-                "shellescape(".to_string(),
-            ],
+            function_patterns: vec!["Shellwords.escape(".to_string(), "shellescape(".to_string()],
             sanitizes_for: vec![SinkKind::CommandExec],
             languages: vec!["ruby".to_string()],
         });
     }
 
     /// Analyze code for taint flows
-    pub fn analyze_code(
-        &self,
-        source_code: &str,
-        file_path: &str,
-    ) -> TaintAnalysisResult {
+    pub fn analyze_code(&self, source_code: &str, file_path: &str) -> TaintAnalysisResult {
         let start_time = std::time::Instant::now();
         let mut result = TaintAnalysisResult::new(file_path);
 
@@ -1601,7 +1616,8 @@ impl TaintAnalyzer {
                 for prop_pattern in &pattern.property_patterns {
                     if line.contains(prop_pattern) {
                         // Try to extract variable name
-                        let variable = self.extract_variable_from_assignment(line)
+                        let variable = self
+                            .extract_variable_from_assignment(line)
                             .unwrap_or_else(|| format!("var_{}", id_counter));
 
                         sources.push(TaintSource {
@@ -1620,7 +1636,8 @@ impl TaintAnalyzer {
                 // Check function patterns
                 for func_pattern in &pattern.function_patterns {
                     if line.contains(func_pattern) {
-                        let variable = self.extract_variable_from_assignment(line)
+                        let variable = self
+                            .extract_variable_from_assignment(line)
                             .unwrap_or_else(|| format!("var_{}", id_counter));
 
                         sources.push(TaintSource {
@@ -1732,13 +1749,8 @@ impl TaintAnalyzer {
 
                                 let severity = vulnerability.as_ref().map(|v| v.default_severity());
 
-                                let path = self.build_path(
-                                    &lines,
-                                    source,
-                                    sink,
-                                    tainted_var,
-                                    file_path,
-                                );
+                                let path =
+                                    self.build_path(&lines, source, sink, tainted_var, file_path);
 
                                 flows.push(TaintFlow {
                                     id: format!("flow_{}", flow_id),
@@ -2040,7 +2052,9 @@ mod tests {
 
     #[test]
     fn test_source_kind_display() {
-        let source = SourceKind::UserInput { input_type: "http".to_string() };
+        let source = SourceKind::UserInput {
+            input_type: "http".to_string(),
+        };
         assert!(source.display_name().contains("User Input"));
     }
 
@@ -2134,7 +2148,9 @@ app.get('/search', (req, res) => {
             id: "flow_1".to_string(),
             source: TaintSource {
                 id: "src_1".to_string(),
-                kind: SourceKind::UserInput { input_type: "http".to_string() },
+                kind: SourceKind::UserInput {
+                    input_type: "http".to_string(),
+                },
                 file_path: "test.py".to_string(),
                 line: 1,
                 variable: "query".to_string(),
@@ -2201,9 +2217,15 @@ def search(request):
         let analyzer = TaintAnalyzer::new("python");
 
         // Should have Flask patterns
-        assert!(analyzer.source_patterns.iter().any(|p| p.name == "flask_request"));
+        assert!(analyzer
+            .source_patterns
+            .iter()
+            .any(|p| p.name == "flask_request"));
         // Should have Django patterns
-        assert!(analyzer.source_patterns.iter().any(|p| p.name == "django_request"));
+        assert!(analyzer
+            .source_patterns
+            .iter()
+            .any(|p| p.name == "django_request"));
     }
 
     #[test]
@@ -2211,9 +2233,15 @@ def search(request):
         let analyzer = TaintAnalyzer::new("python");
 
         // Should have SQL patterns
-        assert!(analyzer.sink_patterns.iter().any(|p| p.kind == SinkKind::SqlQuery));
+        assert!(analyzer
+            .sink_patterns
+            .iter()
+            .any(|p| p.kind == SinkKind::SqlQuery));
         // Should have command exec patterns
-        assert!(analyzer.sink_patterns.iter().any(|p| p.kind == SinkKind::CommandExec));
+        assert!(analyzer
+            .sink_patterns
+            .iter()
+            .any(|p| p.kind == SinkKind::CommandExec));
     }
 
     #[test]
@@ -2221,9 +2249,15 @@ def search(request):
         let analyzer = TaintAnalyzer::new("python");
 
         // Should have parameterized query patterns
-        assert!(analyzer.sanitizer_patterns.iter().any(|p| p.name == "parameterized_query"));
+        assert!(analyzer
+            .sanitizer_patterns
+            .iter()
+            .any(|p| p.name == "parameterized_query"));
         // Should have HTML escape patterns
-        assert!(analyzer.sanitizer_patterns.iter().any(|p| p.name == "html_escape"));
+        assert!(analyzer
+            .sanitizer_patterns
+            .iter()
+            .any(|p| p.name == "html_escape"));
     }
 
     #[test]

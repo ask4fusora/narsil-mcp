@@ -26,7 +26,15 @@ impl ToolHandler for ScanSecurityHandler {
         let max_findings = args.get_u64("max_findings").map(|v| v as usize);
         let offset = args.get_u64("offset").map(|v| v as usize);
         engine
-            .scan_security(repo, path, severity_threshold, ruleset, exclude_tests, max_findings, offset)
+            .scan_security(
+                repo,
+                path,
+                severity_threshold,
+                ruleset,
+                exclude_tests,
+                max_findings,
+                offset,
+            )
             .await
     }
 }

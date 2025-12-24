@@ -28,9 +28,9 @@ mod security_config;
 mod security_rules;
 mod streaming;
 mod supply_chain;
-mod tool_handlers;
 mod symbols;
 mod taint;
+mod tool_handlers;
 mod type_inference;
 
 use anyhow::Result;
@@ -192,8 +192,7 @@ async fn main() -> Result<()> {
     if args.neural {
         info!(
             "Neural embeddings requested (backend={}, model={:?})",
-            args.neural_backend,
-            args.neural_model
+            args.neural_backend, args.neural_model
         );
     }
 

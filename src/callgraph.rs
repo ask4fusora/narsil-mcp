@@ -491,7 +491,7 @@ impl CallGraph {
 
             // Calculate a simple similarity score
             let score = if name_lower.contains(&query_lower) {
-                100 - name.len()  // Shorter matches are better
+                100 - name.len() // Shorter matches are better
             } else {
                 // Count matching characters
                 let mut matches = 0;
@@ -509,12 +509,18 @@ impl CallGraph {
         }
 
         candidates.sort_by(|a, b| b.1.cmp(&a.1));
-        candidates.into_iter().take(limit).map(|(name, _)| name).collect()
+        candidates
+            .into_iter()
+            .take(limit)
+            .map(|(name, _)| name)
+            .collect()
     }
 
     /// Get direct callers of a function (with fuzzy matching)
     pub fn get_callers(&self, function: &str) -> Vec<CallEdge> {
-        let actual_name = self.find_function(function).unwrap_or_else(|| function.to_string());
+        let actual_name = self
+            .find_function(function)
+            .unwrap_or_else(|| function.to_string());
         self.nodes
             .get(&actual_name)
             .map(|n| n.called_by.clone())
@@ -523,7 +529,9 @@ impl CallGraph {
 
     /// Get functions called by a function (with fuzzy matching)
     pub fn get_callees(&self, function: &str) -> Vec<CallEdge> {
-        let actual_name = self.find_function(function).unwrap_or_else(|| function.to_string());
+        let actual_name = self
+            .find_function(function)
+            .unwrap_or_else(|| function.to_string());
         self.nodes
             .get(&actual_name)
             .map(|n| n.calls.clone())
@@ -532,7 +540,9 @@ impl CallGraph {
 
     /// Get transitive callers (all functions that eventually call this) - with fuzzy matching
     pub fn get_transitive_callers(&self, function: &str, max_depth: usize) -> Vec<(String, usize)> {
-        let actual_name = self.find_function(function).unwrap_or_else(|| function.to_string());
+        let actual_name = self
+            .find_function(function)
+            .unwrap_or_else(|| function.to_string());
         let mut result = Vec::new();
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
@@ -562,7 +572,9 @@ impl CallGraph {
 
     /// Get transitive callees (all functions eventually called) - with fuzzy matching
     pub fn get_transitive_callees(&self, function: &str, max_depth: usize) -> Vec<(String, usize)> {
-        let actual_name = self.find_function(function).unwrap_or_else(|| function.to_string());
+        let actual_name = self
+            .find_function(function)
+            .unwrap_or_else(|| function.to_string());
         let mut result = Vec::new();
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
@@ -816,7 +828,9 @@ impl CallGraph {
     }
 
     /// Get all nodes (for iteration)
-    pub fn iter_nodes(&self) -> impl Iterator<Item = dashmap::mapref::multiple::RefMulti<'_, String, CallNode>> {
+    pub fn iter_nodes(
+        &self,
+    ) -> impl Iterator<Item = dashmap::mapref::multiple::RefMulti<'_, String, CallNode>> {
         self.nodes.iter()
     }
 }

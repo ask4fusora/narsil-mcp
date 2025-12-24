@@ -8,7 +8,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::{HashMap, HashSet, BTreeMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
@@ -206,15 +206,29 @@ impl MerkleTree {
     fn diff_nodes(old: &MerkleNode, new: &MerkleNode, changes: &mut ChangeSet) {
         match (old, new) {
             // Both are files - only new_path is needed since we track modified files by their current path
-            (MerkleNode::File { hash: old_hash, .. },
-             MerkleNode::File { path: new_path, hash: new_hash, .. }) => {
+            (
+                MerkleNode::File { hash: old_hash, .. },
+                MerkleNode::File {
+                    path: new_path,
+                    hash: new_hash,
+                    ..
+                },
+            ) => {
                 if old_hash != new_hash {
                     changes.modified.push(new_path.clone());
                 }
             }
             // Both are directories
-            (MerkleNode::Directory { children: old_children, .. },
-             MerkleNode::Directory { children: new_children, .. }) => {
+            (
+                MerkleNode::Directory {
+                    children: old_children,
+                    ..
+                },
+                MerkleNode::Directory {
+                    children: new_children,
+                    ..
+                },
+            ) => {
                 // Find deleted entries
                 for (name, old_child) in old_children {
                     if !new_children.contains_key(name) {
@@ -268,7 +282,9 @@ impl MerkleTree {
 
     fn collect_symbols<'a>(node: &'a MerkleNode, symbols: &mut Vec<&'a Symbol>) {
         match node {
-            MerkleNode::File { symbols: file_syms, .. } => {
+            MerkleNode::File {
+                symbols: file_syms, ..
+            } => {
                 symbols.extend(file_syms.iter());
             }
             MerkleNode::Directory { children, .. } => {
@@ -481,10 +497,7 @@ impl SymbolResolver {
             ResolutionRule {
                 import_type: ImportType::Python,
                 extensions: vec![".py".to_string()],
-                module_dirs: vec![
-                    "site-packages".to_string(),
-                    "lib".to_string(),
-                ],
+                module_dirs: vec!["site-packages".to_string(), "lib".to_string()],
                 index_files: vec!["__init__.py".to_string()],
             },
             // Rust
@@ -504,11 +517,7 @@ impl SymbolResolver {
             // C/C++
             ResolutionRule {
                 import_type: ImportType::CppInclude,
-                extensions: vec![
-                    ".h".to_string(),
-                    ".hpp".to_string(),
-                    ".hh".to_string(),
-                ],
+                extensions: vec![".h".to_string(), ".hpp".to_string(), ".hh".to_string()],
                 module_dirs: vec!["include".to_string()],
                 index_files: vec![],
             },
@@ -561,7 +570,9 @@ impl SymbolResolver {
         base_dir: &Path,
         project_root: &Path,
     ) -> Option<PathBuf> {
-        let rules = self.resolution_rules.iter()
+        let rules = self
+            .resolution_rules
+            .iter()
             .find(|r| r.import_type == import.import_type)?;
 
         // Handle relative imports
@@ -657,13 +668,21 @@ impl SymbolResolver {
                     }
                     false
                 });
-                if has_import { Some(file) } else { None }
+                if has_import {
+                    Some(file)
+                } else {
+                    None
+                }
             })
             .collect()
     }
 
     /// Find all symbols imported from a file
-    pub fn get_imported_symbols(&self, from_file: &Path, target_file: &Path) -> Vec<&ImportedSymbol> {
+    pub fn get_imported_symbols(
+        &self,
+        from_file: &Path,
+        target_file: &Path,
+    ) -> Vec<&ImportedSymbol> {
         self.imports
             .get(from_file)
             .map(|imports| {
@@ -691,8 +710,8 @@ impl SymbolResolver {
 
         // Only process code files, not scripts or configs
         const CODE_EXTENSIONS: &[&str] = &[
-            ".rs", ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".java", ".kt",
-            ".c", ".cpp", ".h", ".hpp", ".cs", ".rb", ".php", ".swift", ".scala"
+            ".rs", ".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".java", ".kt", ".c", ".cpp", ".h",
+            ".hpp", ".cs", ".rb", ".php", ".swift", ".scala",
         ];
 
         let is_code_file = |path: &Path| -> bool {
@@ -745,10 +764,7 @@ impl ImportGraph {
             .entry(from.clone())
             .or_default()
             .push((to.clone(), import_path));
-        self.reverse_edges
-            .entry(to)
-            .or_default()
-            .push(from);
+        self.reverse_edges.entry(to).or_default().push(from);
     }
 
     /// Check if an edge already exists
@@ -784,13 +800,7 @@ impl ImportGraph {
 
         for start in self.edges.keys() {
             if !visited.contains(start) {
-                self.dfs_find_cycles(
-                    start,
-                    &mut visited,
-                    &mut rec_stack,
-                    &mut path,
-                    &mut cycles,
-                );
+                self.dfs_find_cycles(start, &mut visited, &mut rec_stack, &mut path, &mut cycles);
             }
         }
 
@@ -838,7 +848,8 @@ impl ImportGraph {
         }
         visited.insert(file.to_path_buf());
 
-        let max_child_depth = self.edges
+        let max_child_depth = self
+            .edges
             .get(file)
             .map(|deps| {
                 deps.iter()
@@ -974,16 +985,14 @@ impl WorkspaceSymbolIndex {
             return vec![s.to_string()];
         }
 
-        chars
-            .windows(3)
-            .map(|w| w.iter().collect())
-            .collect()
+        chars.windows(3).map(|w| w.iter().collect()).collect()
     }
 
     /// Fuzzy search for symbols
     pub fn search(&self, query: &str, limit: usize) -> Vec<SymbolSearchResult> {
         let normalized_query = query.to_lowercase();
-        let query_trigrams: HashSet<String> = Self::trigrams(&normalized_query).into_iter().collect();
+        let query_trigrams: HashSet<String> =
+            Self::trigrams(&normalized_query).into_iter().collect();
 
         // Find candidate symbols using trigram index
         let mut candidates: HashMap<String, usize> = HashMap::new();
@@ -999,7 +1008,9 @@ impl WorkspaceSymbolIndex {
         // Also include exact prefix matches
         for name in self.symbols.keys() {
             if name.starts_with(&normalized_query) || normalized_query.starts_with(name) {
-                candidates.entry(name.clone()).or_insert(query_trigrams.len());
+                candidates
+                    .entry(name.clone())
+                    .or_insert(query_trigrams.len());
             }
         }
 
@@ -1017,26 +1028,32 @@ impl WorkspaceSymbolIndex {
                 };
 
                 // Bonus for prefix match
-                let prefix_bonus = if name.starts_with(&normalized_query) { 0.3 } else { 0.0 };
+                let prefix_bonus = if name.starts_with(&normalized_query) {
+                    0.3
+                } else {
+                    0.0
+                };
 
                 // Bonus for exact match
                 let exact_bonus = if name == &normalized_query { 0.5 } else { 0.0 };
 
                 let base_score = trigram_score + prefix_bonus + exact_bonus;
 
-                Some(symbols.iter().map(move |indexed| {
-                    SymbolSearchResult {
-                        symbol: indexed.symbol.clone(),
-                        file_path: indexed.file_path.clone(),
-                        score: base_score * indexed.score_boost,
-                    }
+                Some(symbols.iter().map(move |indexed| SymbolSearchResult {
+                    symbol: indexed.symbol.clone(),
+                    file_path: indexed.file_path.clone(),
+                    score: base_score * indexed.score_boost,
                 }))
             })
             .flatten()
             .collect();
 
         // Sort by score descending
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         results.truncate(limit);
         results
@@ -1395,13 +1412,11 @@ mod tests {
         let import = Import {
             source_file: PathBuf::from("test.ts"),
             import_path: "./utils".to_string(),
-            imported_symbols: vec![
-                ImportedSymbol {
-                    name: "helper".to_string(),
-                    alias: None,
-                    is_default: false,
-                },
-            ],
+            imported_symbols: vec![ImportedSymbol {
+                name: "helper".to_string(),
+                alias: None,
+                is_default: false,
+            }],
             import_type: ImportType::EsModule,
             line: 1,
         };
@@ -1415,7 +1430,9 @@ mod tests {
         let resolver = SymbolResolver::new();
 
         // Check ES module rules exist
-        let es_rule = resolver.resolution_rules.iter()
+        let es_rule = resolver
+            .resolution_rules
+            .iter()
             .find(|r| r.import_type == ImportType::EsModule);
         assert!(es_rule.is_some());
 
@@ -1446,11 +1463,7 @@ mod tests {
             is_public: true,
         };
 
-        resolver.index_file(
-            Path::new("test.rs"),
-            &[symbol],
-            vec![exported],
-        );
+        resolver.index_file(Path::new("test.rs"), &[symbol], vec![exported]);
 
         let defs = resolver.find_symbol_definition("TestFunc");
         assert_eq!(defs.len(), 1);

@@ -13,13 +13,9 @@ fn bench_index_repository(c: &mut Criterion) {
         let temp_dir = create_test_repo(*num_files);
 
         group.throughput(Throughput::Elements(*num_files as u64));
-        group.bench_with_input(
-            BenchmarkId::new("files", num_files),
-            &temp_dir,
-            |b, dir| {
-                b.iter(|| index_repository(black_box(dir.path())));
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("files", num_files), &temp_dir, |b, dir| {
+            b.iter(|| index_repository(black_box(dir.path())));
+        });
     }
 
     group.finish();

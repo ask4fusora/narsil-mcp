@@ -1845,7 +1845,6 @@ impl McpServer {
         // - analysis.rs: get_control_flow, find_dead_code, get_data_flow, etc.
     }
 
-
     fn handle_resources_list(&self, id: Option<Value>) -> JsonRpcResponse {
         // Resources are exposed as the indexed repositories
         JsonRpcResponse::success(

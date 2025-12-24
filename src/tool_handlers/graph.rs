@@ -129,7 +129,6 @@ impl ViewType {
             _ => None,
         }
     }
-
 }
 
 // ============================================================================
@@ -147,8 +146,12 @@ impl ToolHandler for GetCodeGraphHandler {
 
     async fn execute(&self, engine: &CodeIntelEngine, args: Value) -> Result<String> {
         let view_str = args.get_str("view").unwrap_or("call");
-        let view = ViewType::from_str(view_str)
-            .ok_or_else(|| anyhow!("Invalid view type: {}. Expected: call, import, symbol, hybrid, or flow", view_str))?;
+        let view = ViewType::from_str(view_str).ok_or_else(|| {
+            anyhow!(
+                "Invalid view type: {}. Expected: call, import, symbol, hybrid, or flow",
+                view_str
+            )
+        })?;
 
         let repo = args.get_str("repo").unwrap_or("");
         let root = args.get_str("root");
@@ -188,10 +191,12 @@ impl ToolHandler for GetCodeGraphHandler {
                 .await?
             }
             ViewType::Import => {
-                self.build_import_graph(engine, repo, root, depth, direction, cluster_by).await?
+                self.build_import_graph(engine, repo, root, depth, direction, cluster_by)
+                    .await?
             }
             ViewType::Symbol => {
-                self.build_symbol_graph(engine, repo, root, depth, cluster_by).await?
+                self.build_symbol_graph(engine, repo, root, depth, cluster_by)
+                    .await?
             }
             ViewType::Hybrid => {
                 self.build_hybrid_graph(
@@ -209,7 +214,8 @@ impl ToolHandler for GetCodeGraphHandler {
                 .await?
             }
             ViewType::Flow => {
-                self.build_flow_graph(engine, repo, root, cluster_by).await?
+                self.build_flow_graph(engine, repo, root, cluster_by)
+                    .await?
             }
         };
 
@@ -278,10 +284,7 @@ impl GetCodeGraphHandler {
         let starting_nodes: Vec<String> = starting_nodes.into_iter().take(100).collect();
 
         // BFS traversal
-        let mut queue: Vec<(String, usize)> = starting_nodes
-            .into_iter()
-            .map(|n| (n, 0))
-            .collect();
+        let mut queue: Vec<(String, usize)> = starting_nodes.into_iter().map(|n| (n, 0)).collect();
 
         while let Some((func_name, current_depth)) = queue.pop() {
             if visited.contains(&func_name) || current_depth > depth {
@@ -435,7 +438,9 @@ impl GetCodeGraphHandler {
 
             for import in imports {
                 let is_cycle = import_data.cycles.iter().any(|cycle| {
-                    cycle.windows(2).any(|w| w[0] == file_str && w[1] == *import)
+                    cycle
+                        .windows(2)
+                        .any(|w| w[0] == file_str && w[1] == *import)
                 });
 
                 edges.push(GraphEdge {
@@ -501,8 +506,8 @@ impl GetCodeGraphHandler {
         _depth: usize,
         cluster_by: &str,
     ) -> Result<CodeGraph> {
-        let symbol_name = root
-            .ok_or_else(|| anyhow!("Symbol graph requires 'root' parameter (symbol name)"))?;
+        let symbol_name =
+            root.ok_or_else(|| anyhow!("Symbol graph requires 'root' parameter (symbol name)"))?;
 
         // Get symbol data through engine
         let symbol_data = engine.get_symbol_graph_for_viz(repo, symbol_name).await?;
@@ -659,8 +664,8 @@ impl GetCodeGraphHandler {
         root: Option<&str>,
         _cluster_by: &str,
     ) -> Result<CodeGraph> {
-        let function = root
-            .ok_or_else(|| anyhow!("Flow graph requires 'root' parameter (function name)"))?;
+        let function =
+            root.ok_or_else(|| anyhow!("Flow graph requires 'root' parameter (function name)"))?;
 
         // Get control flow graph through engine
         let cfg_data = engine.get_cfg_for_viz(repo, function).await?;
@@ -836,7 +841,16 @@ fn normalize_path_key(path: &str, line: usize) -> Vec<String> {
     }
 
     // Try to extract relative path by finding common patterns like src/, lib/, etc.
-    for prefix in &["src/", "lib/", "test/", "tests/", "pkg/", "cmd/", "internal/", "app/"] {
+    for prefix in &[
+        "src/",
+        "lib/",
+        "test/",
+        "tests/",
+        "pkg/",
+        "cmd/",
+        "internal/",
+        "app/",
+    ] {
         if let Some(idx) = path.find(prefix) {
             keys.push(format!("{}:{}", &path[idx..], line));
         }
@@ -891,10 +905,7 @@ fn build_directory_clusters(nodes: &[GraphNode]) -> Vec<Cluster> {
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| ".".to_string());
 
-        dir_to_nodes
-            .entry(dir)
-            .or_default()
-            .push(node.id.clone());
+        dir_to_nodes.entry(dir).or_default().push(node.id.clone());
     }
 
     dir_to_nodes
@@ -904,7 +915,10 @@ fn build_directory_clusters(nodes: &[GraphNode]) -> Vec<Cluster> {
             let label = if dir.is_empty() || dir == "." {
                 "root".to_string()
             } else {
-                dir.split(['/', '\\']).next_back().unwrap_or(&dir).to_string()
+                dir.split(['/', '\\'])
+                    .next_back()
+                    .unwrap_or(&dir)
+                    .to_string()
             };
             Cluster {
                 id: format!("cluster_{}", dir.replace(['/', '\\', '.', ' '], "_")),

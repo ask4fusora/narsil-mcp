@@ -301,8 +301,8 @@ impl SecurityRulesEngine {
 
     /// Load a ruleset from TOML string
     pub fn load_ruleset_toml(&mut self, toml_str: &str) -> Result<usize, String> {
-        let ruleset: Ruleset = toml::from_str(toml_str)
-            .map_err(|e| format!("Failed to parse TOML ruleset: {}", e))?;
+        let ruleset: Ruleset =
+            toml::from_str(toml_str).map_err(|e| format!("Failed to parse TOML ruleset: {}", e))?;
 
         let count = ruleset.rules.len();
         for rule in ruleset.rules {
@@ -314,7 +314,11 @@ impl SecurityRulesEngine {
     /// Add a single rule
     pub fn add_rule(&mut self, rule: SecurityRule) {
         // Pre-compile patterns
-        if let RuleType::Pattern { ref patterns, ref safe_patterns } = rule.rule_type {
+        if let RuleType::Pattern {
+            ref patterns,
+            ref safe_patterns,
+        } = rule.rule_type
+        {
             for pattern in patterns.iter().chain(safe_patterns.iter()) {
                 if !self.pattern_cache.contains_key(pattern) {
                     if let Ok(re) = Regex::new(pattern) {
@@ -380,7 +384,12 @@ impl SecurityRulesEngine {
     }
 
     /// Scan for OWASP Top 10 issues only
-    pub fn scan_owasp_top10(&self, code: &str, file_path: &str, language: &str) -> Vec<SecurityFinding> {
+    pub fn scan_owasp_top10(
+        &self,
+        code: &str,
+        file_path: &str,
+        language: &str,
+    ) -> Vec<SecurityFinding> {
         let mut findings = Vec::new();
 
         for rule_id in &self.owasp_rules {
@@ -401,7 +410,12 @@ impl SecurityRulesEngine {
     }
 
     /// Scan for CWE Top 25 issues only
-    pub fn scan_cwe_top25(&self, code: &str, file_path: &str, language: &str) -> Vec<SecurityFinding> {
+    pub fn scan_cwe_top25(
+        &self,
+        code: &str,
+        file_path: &str,
+        language: &str,
+    ) -> Vec<SecurityFinding> {
         let mut findings = Vec::new();
 
         for rule_id in &self.cwe_top25_rules {
@@ -423,7 +437,13 @@ impl SecurityRulesEngine {
 
     /// Scan using only rules that match any of the specified tags
     /// Tags can be rule categories like "crypto", "injection", "secrets", "memory", etc.
-    pub fn scan_with_tags(&self, code: &str, file_path: &str, language: &str, tags: &[&str]) -> Vec<SecurityFinding> {
+    pub fn scan_with_tags(
+        &self,
+        code: &str,
+        file_path: &str,
+        language: &str,
+        tags: &[&str],
+    ) -> Vec<SecurityFinding> {
         let mut findings = Vec::new();
 
         for rule in self.rules.values() {
@@ -481,23 +501,42 @@ impl SecurityRulesEngine {
     }
 
     /// Evaluate a single rule against code
-    fn evaluate_rule(&self, rule: &SecurityRule, code: &str, file_path: &str) -> Vec<SecurityFinding> {
+    fn evaluate_rule(
+        &self,
+        rule: &SecurityRule,
+        code: &str,
+        file_path: &str,
+    ) -> Vec<SecurityFinding> {
         match &rule.rule_type {
-            RuleType::Pattern { patterns, safe_patterns } => {
-                self.evaluate_pattern_rule(rule, code, file_path, patterns, safe_patterns)
-            }
-            RuleType::TaintFlow { sources, sinks, sanitizers } => {
-                self.evaluate_taint_rule(rule, code, file_path, sources, sinks, sanitizers)
-            }
-            RuleType::ControlFlow { required_before, sink } => {
-                self.evaluate_control_flow_rule(rule, code, file_path, required_before, sink)
-            }
-            RuleType::Secret { patterns, entropy_threshold } => {
-                self.evaluate_secret_rule(rule, code, file_path, patterns, *entropy_threshold)
-            }
-            RuleType::Crypto { weak_algorithms, insecure_modes, min_key_size } => {
-                self.evaluate_crypto_rule(rule, code, file_path, weak_algorithms, insecure_modes, *min_key_size)
-            }
+            RuleType::Pattern {
+                patterns,
+                safe_patterns,
+            } => self.evaluate_pattern_rule(rule, code, file_path, patterns, safe_patterns),
+            RuleType::TaintFlow {
+                sources,
+                sinks,
+                sanitizers,
+            } => self.evaluate_taint_rule(rule, code, file_path, sources, sinks, sanitizers),
+            RuleType::ControlFlow {
+                required_before,
+                sink,
+            } => self.evaluate_control_flow_rule(rule, code, file_path, required_before, sink),
+            RuleType::Secret {
+                patterns,
+                entropy_threshold,
+            } => self.evaluate_secret_rule(rule, code, file_path, patterns, *entropy_threshold),
+            RuleType::Crypto {
+                weak_algorithms,
+                insecure_modes,
+                min_key_size,
+            } => self.evaluate_crypto_rule(
+                rule,
+                code,
+                file_path,
+                weak_algorithms,
+                insecure_modes,
+                *min_key_size,
+            ),
         }
     }
 
@@ -589,13 +628,23 @@ impl SecurityRulesEngine {
                     end_line: flow.sink.line,
                     end_column: 80,
                     snippet: flow.sink.code.clone(),
-                    message: format!("{}: {} flows to {}",
+                    message: format!(
+                        "{}: {} flows to {}",
                         vuln_kind.display_name(),
                         flow.source.variable,
-                        flow.sink.function),
+                        flow.sink.function
+                    ),
                     remediation: rule.remediation.clone(),
-                    cwe: vuln_kind.cwe_id().map(|s| s.to_string()).into_iter().collect(),
-                    owasp: vuln_kind.owasp_category().map(|s| s.to_string()).into_iter().collect(),
+                    cwe: vuln_kind
+                        .cwe_id()
+                        .map(|s| s.to_string())
+                        .into_iter()
+                        .collect(),
+                    owasp: vuln_kind
+                        .owasp_category()
+                        .map(|s| s.to_string())
+                        .into_iter()
+                        .collect(),
                     context: HashMap::new(),
                 });
             }
@@ -631,9 +680,9 @@ impl SecurityRulesEngine {
         for (line_idx, line) in lines.iter().enumerate() {
             if sink_re.is_match(line) {
                 // Check if any required operation appears before this line
-                let has_required = lines[..line_idx].iter().any(|prev_line| {
-                    required_patterns.iter().any(|re| re.is_match(prev_line))
-                });
+                let has_required = lines[..line_idx]
+                    .iter()
+                    .any(|prev_line| required_patterns.iter().any(|re| re.is_match(prev_line)));
 
                 if !has_required {
                     findings.push(SecurityFinding {
@@ -831,13 +880,19 @@ impl SecurityRulesEngine {
                 RuleType::Crypto { .. } => {
                     fixes.extend(suggest_crypto_fixes(finding));
                 }
-                RuleType::ControlFlow { required_before, .. } => {
+                RuleType::ControlFlow {
+                    required_before, ..
+                } => {
                     fixes.push(SuggestedFix {
                         description: format!(
                             "Add required check before this operation: {}",
                             required_before.join(" or ")
                         ),
-                        diff: format!("+ // Add: {}\n  {}", required_before.join(" or "), finding.snippet),
+                        diff: format!(
+                            "+ // Add: {}\n  {}",
+                            required_before.join(" or "),
+                            finding.snippet
+                        ),
                         confidence: Confidence::Medium,
                     });
                 }
@@ -880,7 +935,8 @@ impl SecurityRulesEngine {
             owasp: vec!["A01:2021".to_string()],
             rule_type: RuleType::Pattern {
                 patterns: vec![
-                    r"@app\.route.*\n(?:(?!@login_required|@auth\.required|@requires_auth).)*.def".to_string(),
+                    r"@app\.route.*\n(?:(?!@login_required|@auth\.required|@requires_auth).)*.def"
+                        .to_string(),
                     r"router\.(get|post|put|delete)\([^)]+\)(?!\.middleware)".to_string(),
                 ],
                 safe_patterns: vec![
@@ -889,9 +945,15 @@ impl SecurityRulesEngine {
                     r"\.middleware\(auth".to_string(),
                 ],
             },
-            languages: vec!["python".to_string(), "javascript".to_string(), "typescript".to_string()],
+            languages: vec![
+                "python".to_string(),
+                "javascript".to_string(),
+                "typescript".to_string(),
+            ],
             message: "Route handler may be missing authorization check".to_string(),
-            remediation: "Add authentication/authorization middleware or decorator to protect this endpoint".to_string(),
+            remediation:
+                "Add authentication/authorization middleware or decorator to protect this endpoint"
+                    .to_string(),
             enabled: true,
             tags: vec!["auth".to_string(), "access-control".to_string()],
         });
@@ -912,14 +974,13 @@ impl SecurityRulesEngine {
                     "RC4".to_string(),
                     "RC2".to_string(),
                 ],
-                insecure_modes: vec![
-                    "ECB".to_string(),
-                ],
+                insecure_modes: vec!["ECB".to_string()],
                 min_key_size: Some(128),
             },
             languages: vec![],
             message: "Use of weak cryptographic algorithm detected".to_string(),
-            remediation: "Use strong algorithms like SHA-256, SHA-512, AES-256, or ChaCha20".to_string(),
+            remediation: "Use strong algorithms like SHA-256, SHA-512, AES-256, or ChaCha20"
+                .to_string(),
             enabled: true,
             tags: vec!["crypto".to_string()],
         });
@@ -951,7 +1012,9 @@ impl SecurityRulesEngine {
             },
             languages: vec![],
             message: "Potential SQL injection vulnerability".to_string(),
-            remediation: "Use parameterized queries or prepared statements instead of string concatenation".to_string(),
+            remediation:
+                "Use parameterized queries or prepared statements instead of string concatenation"
+                    .to_string(),
             enabled: true,
             tags: vec!["injection".to_string(), "sql".to_string()],
         });
@@ -969,14 +1032,13 @@ impl SecurityRulesEngine {
                     r"exec\([^)]*\+".to_string(),
                     r"child_process\.exec\([^)]*\+".to_string(),
                 ],
-                safe_patterns: vec![
-                    r"shlex\.quote".to_string(),
-                    r"escapeshellarg".to_string(),
-                ],
+                safe_patterns: vec![r"shlex\.quote".to_string(), r"escapeshellarg".to_string()],
             },
             languages: vec!["python".to_string(), "javascript".to_string()],
             message: "Potential command injection vulnerability".to_string(),
-            remediation: "Avoid shell=True, use subprocess with list arguments, and sanitize all inputs".to_string(),
+            remediation:
+                "Avoid shell=True, use subprocess with list arguments, and sanitize all inputs"
+                    .to_string(),
             enabled: true,
             tags: vec!["injection".to_string(), "command".to_string()],
         });
@@ -1002,7 +1064,9 @@ impl SecurityRulesEngine {
             },
             languages: vec!["javascript".to_string(), "typescript".to_string()],
             message: "Potential XSS vulnerability from unsanitized HTML output".to_string(),
-            remediation: "Sanitize user input using DOMPurify or similar library before inserting into DOM".to_string(),
+            remediation:
+                "Sanitize user input using DOMPurify or similar library before inserting into DOM"
+                    .to_string(),
             enabled: true,
             tags: vec!["injection".to_string(), "xss".to_string()],
         });
@@ -1047,7 +1111,9 @@ impl SecurityRulesEngine {
             },
             languages: vec![],
             message: "Overly permissive CORS configuration".to_string(),
-            remediation: "Restrict CORS to specific trusted origins instead of allowing all origins".to_string(),
+            remediation:
+                "Restrict CORS to specific trusted origins instead of allowing all origins"
+                    .to_string(),
             enabled: true,
             tags: vec!["cors".to_string(), "config".to_string()],
         });
@@ -1073,7 +1139,8 @@ impl SecurityRulesEngine {
             },
             languages: vec![],
             message: "Hardcoded credential detected".to_string(),
-            remediation: "Move credentials to environment variables or secure secrets management".to_string(),
+            remediation: "Move credentials to environment variables or secure secrets management"
+                .to_string(),
             enabled: true,
             tags: vec!["secrets".to_string(), "credentials".to_string()],
         });
@@ -1114,13 +1181,12 @@ impl SecurityRulesEngine {
                     r"unserialize\(".to_string(),
                     r"JSON\.parse.*eval".to_string(),
                 ],
-                safe_patterns: vec![
-                    r"yaml\.safe_load".to_string(),
-                ],
+                safe_patterns: vec![r"yaml\.safe_load".to_string()],
             },
             languages: vec!["python".to_string(), "ruby".to_string(), "php".to_string()],
             message: "Insecure deserialization detected".to_string(),
-            remediation: "Use safe deserialization methods and validate input before deserializing".to_string(),
+            remediation: "Use safe deserialization methods and validate input before deserializing"
+                .to_string(),
             enabled: true,
             tags: vec!["deserialization".to_string()],
         });
@@ -1163,14 +1229,16 @@ impl SecurityRulesEngine {
                     r"fetch\([^)]*req\.(query|body|params)".to_string(),
                     r"http\.request\([^)]*req\.".to_string(),
                 ],
-                safe_patterns: vec![
-                    r"validate_url".to_string(),
-                    r"allowed_hosts".to_string(),
-                ],
+                safe_patterns: vec![r"validate_url".to_string(), r"allowed_hosts".to_string()],
             },
-            languages: vec!["python".to_string(), "javascript".to_string(), "typescript".to_string()],
+            languages: vec![
+                "python".to_string(),
+                "javascript".to_string(),
+                "typescript".to_string(),
+            ],
             message: "Potential SSRF vulnerability - user input used in URL".to_string(),
-            remediation: "Validate and whitelist allowed URLs/hosts before making requests".to_string(),
+            remediation: "Validate and whitelist allowed URLs/hosts before making requests"
+                .to_string(),
             enabled: true,
             tags: vec!["ssrf".to_string(), "network".to_string()],
         });
@@ -1219,10 +1287,7 @@ impl SecurityRulesEngine {
                 patterns: vec![
                     r"free\s*\([^)]+\)[^;]*\n[^}]*\1".to_string(), // Simplified pattern
                 ],
-                safe_patterns: vec![
-                    r"= NULL".to_string(),
-                    r"= nullptr".to_string(),
-                ],
+                safe_patterns: vec![r"= NULL".to_string(), r"= nullptr".to_string()],
             },
             languages: vec!["c".to_string(), "cpp".to_string()],
             message: "Potential use-after-free vulnerability".to_string(),
@@ -1271,10 +1336,7 @@ impl SecurityRulesEngine {
                     r"\[.*\]\s*//.*user.*input".to_string(),
                     r"memcpy\([^,]+,[^,]+,\s*\w+\s*\)".to_string(),
                 ],
-                safe_patterns: vec![
-                    r"bounds_check".to_string(),
-                    r"\.len\(\)".to_string(),
-                ],
+                safe_patterns: vec![r"bounds_check".to_string(), r"\.len\(\)".to_string()],
             },
             languages: vec!["c".to_string(), "cpp".to_string(), "rust".to_string()],
             message: "Potential out-of-bounds read".to_string(),
@@ -1305,7 +1367,8 @@ impl SecurityRulesEngine {
             },
             languages: vec!["python".to_string(), "javascript".to_string()],
             message: "User input used in file path without sanitization".to_string(),
-            remediation: "Sanitize file paths and use basename, realpath, or whitelist validation".to_string(),
+            remediation: "Sanitize file paths and use basename, realpath, or whitelist validation"
+                .to_string(),
             enabled: true,
             tags: vec!["path".to_string(), "filesystem".to_string()],
         });
@@ -1356,7 +1419,8 @@ impl SecurityRulesEngine {
             },
             languages: vec!["python".to_string(), "javascript".to_string()],
             message: "File upload without apparent restriction on file type".to_string(),
-            remediation: "Validate file type, extension, and content before saving uploaded files".to_string(),
+            remediation: "Validate file type, extension, and content before saving uploaded files"
+                .to_string(),
             enabled: true,
             tags: vec!["upload".to_string(), "filesystem".to_string()],
         });
@@ -1455,9 +1519,14 @@ impl SecurityRulesEngine {
                     r"scrypt".to_string(),
                 ],
             },
-            languages: vec!["python".to_string(), "javascript".to_string(), "java".to_string()],
+            languages: vec![
+                "python".to_string(),
+                "javascript".to_string(),
+                "java".to_string(),
+            ],
             message: "Using weak hash for key derivation".to_string(),
-            remediation: "Use PBKDF2, bcrypt, scrypt, or Argon2 for password/key derivation".to_string(),
+            remediation: "Use PBKDF2, bcrypt, scrypt, or Argon2 for password/key derivation"
+                .to_string(),
             enabled: true,
             tags: vec!["crypto".to_string(), "password".to_string()],
         });
@@ -1480,7 +1549,9 @@ impl SecurityRulesEngine {
             },
             languages: vec![],
             message: "AWS Access Key ID detected".to_string(),
-            remediation: "Remove the key, rotate it immediately, and use IAM roles or environment variables".to_string(),
+            remediation:
+                "Remove the key, rotate it immediately, and use IAM roles or environment variables"
+                    .to_string(),
             enabled: true,
             tags: vec!["secrets".to_string(), "aws".to_string()],
         });
@@ -1504,7 +1575,9 @@ impl SecurityRulesEngine {
             },
             languages: vec![],
             message: "GitHub token detected".to_string(),
-            remediation: "Remove the token, revoke it, and use environment variables or secrets management".to_string(),
+            remediation:
+                "Remove the token, revoke it, and use environment variables or secrets management"
+                    .to_string(),
             enabled: true,
             tags: vec!["secrets".to_string(), "github".to_string()],
         });
@@ -1569,7 +1642,9 @@ impl SecurityRulesEngine {
             },
             languages: vec![],
             message: "JWT or session secret detected".to_string(),
-            remediation: "Move secrets to environment variables and ensure they are strong (256+ bits)".to_string(),
+            remediation:
+                "Move secrets to environment variables and ensure they are strong (256+ bits)"
+                    .to_string(),
             enabled: true,
             tags: vec!["secrets".to_string(), "jwt".to_string()],
         });
@@ -1612,11 +1687,10 @@ pub struct SuggestedFix {
 /// Check if a CWE is in the Top 25
 fn is_cwe_top25(cwe: &str) -> bool {
     const CWE_TOP25: &[&str] = &[
-        "CWE-787", "CWE-79", "CWE-89", "CWE-416", "CWE-78",
-        "CWE-20", "CWE-125", "CWE-22", "CWE-352", "CWE-434",
-        "CWE-862", "CWE-476", "CWE-287", "CWE-190", "CWE-502",
-        "CWE-77", "CWE-119", "CWE-798", "CWE-918", "CWE-306",
-        "CWE-362", "CWE-269", "CWE-94", "CWE-863", "CWE-276",
+        "CWE-787", "CWE-79", "CWE-89", "CWE-416", "CWE-78", "CWE-20", "CWE-125", "CWE-22",
+        "CWE-352", "CWE-434", "CWE-862", "CWE-476", "CWE-287", "CWE-190", "CWE-502", "CWE-77",
+        "CWE-119", "CWE-798", "CWE-918", "CWE-306", "CWE-362", "CWE-269", "CWE-94", "CWE-863",
+        "CWE-276",
     ];
     CWE_TOP25.contains(&cwe)
 }
@@ -1666,7 +1740,7 @@ fn redact_secret(secret: &str) -> String {
     if secret.len() <= 8 {
         "*".repeat(secret.len())
     } else {
-        format!("{}...{}", &secret[..4], &secret[secret.len()-4..])
+        format!("{}...{}", &secret[..4], &secret[secret.len() - 4..])
     }
 }
 
@@ -1677,36 +1751,39 @@ fn get_vulnerability_examples(rule_id: &str) -> Vec<CodeExample> {
             CodeExample {
                 language: "python".to_string(),
                 vulnerable: r#"query = f"SELECT * FROM users WHERE name = '{user_input}'"
-cursor.execute(query)"#.to_string(),
-                fixed: r#"cursor.execute("SELECT * FROM users WHERE name = %s", [user_input])"#.to_string(),
+cursor.execute(query)"#
+                    .to_string(),
+                fixed: r#"cursor.execute("SELECT * FROM users WHERE name = %s", [user_input])"#
+                    .to_string(),
                 explanation: "Use parameterized queries to prevent SQL injection".to_string(),
             },
             CodeExample {
                 language: "javascript".to_string(),
                 vulnerable: r#"const query = `SELECT * FROM users WHERE id = ${req.params.id}`;
-db.query(query);"#.to_string(),
-                fixed: r#"db.query("SELECT * FROM users WHERE id = ?", [req.params.id]);"#.to_string(),
+db.query(query);"#
+                    .to_string(),
+                fixed: r#"db.query("SELECT * FROM users WHERE id = ?", [req.params.id]);"#
+                    .to_string(),
                 explanation: "Use prepared statements with placeholders".to_string(),
             },
         ],
-        "OWASP-A03-003" => vec![
-            CodeExample {
-                language: "javascript".to_string(),
-                vulnerable: r#"element.innerHTML = userInput;"#.to_string(),
-                fixed: r#"element.textContent = userInput;
-// Or use: element.innerHTML = DOMPurify.sanitize(userInput);"#.to_string(),
-                explanation: "Use textContent for plain text, or sanitize HTML with DOMPurify".to_string(),
-            },
-        ],
-        "OWASP-A07-001" => vec![
-            CodeExample {
-                language: "python".to_string(),
-                vulnerable: r#"DATABASE_PASSWORD = "super_secret_123""#.to_string(),
-                fixed: r#"import os
-DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD")"#.to_string(),
-                explanation: "Store secrets in environment variables, not in code".to_string(),
-            },
-        ],
+        "OWASP-A03-003" => vec![CodeExample {
+            language: "javascript".to_string(),
+            vulnerable: r#"element.innerHTML = userInput;"#.to_string(),
+            fixed: r#"element.textContent = userInput;
+// Or use: element.innerHTML = DOMPurify.sanitize(userInput);"#
+                .to_string(),
+            explanation: "Use textContent for plain text, or sanitize HTML with DOMPurify"
+                .to_string(),
+        }],
+        "OWASP-A07-001" => vec![CodeExample {
+            language: "python".to_string(),
+            vulnerable: r#"DATABASE_PASSWORD = "super_secret_123""#.to_string(),
+            fixed: r#"import os
+DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD")"#
+                .to_string(),
+            explanation: "Store secrets in environment variables, not in code".to_string(),
+        }],
         _ => vec![],
     }
 }
@@ -1716,13 +1793,17 @@ fn get_vulnerability_references(cwe: &[String], owasp: &[String]) -> Vec<String>
     let mut refs = Vec::new();
 
     for cwe_id in cwe {
-        refs.push(format!("https://cwe.mitre.org/data/definitions/{}.html",
-            cwe_id.trim_start_matches("CWE-")));
+        refs.push(format!(
+            "https://cwe.mitre.org/data/definitions/{}.html",
+            cwe_id.trim_start_matches("CWE-")
+        ));
     }
 
     for owasp_cat in owasp {
-        refs.push(format!("https://owasp.org/Top10/{}",
-            owasp_cat.replace(":", "_")));
+        refs.push(format!(
+            "https://owasp.org/Top10/{}",
+            owasp_cat.replace(":", "_")
+        ));
     }
 
     refs
@@ -1732,41 +1813,44 @@ fn get_vulnerability_references(cwe: &[String], owasp: &[String]) -> Vec<String>
 fn suggest_pattern_fixes(finding: &SecurityFinding, _code: &str) -> Vec<SuggestedFix> {
     // Context-specific fixes based on rule
     match finding.rule_id.as_str() {
-        id if id.contains("A03-003") => vec![
-            SuggestedFix {
-                description: "Use textContent instead of innerHTML".to_string(),
-                diff: format!("- {}\n+ {}",
-                    finding.snippet,
-                    finding.snippet.replace("innerHTML", "textContent")),
-                confidence: Confidence::Medium,
-            },
-        ],
+        id if id.contains("A03-003") => vec![SuggestedFix {
+            description: "Use textContent instead of innerHTML".to_string(),
+            diff: format!(
+                "- {}\n+ {}",
+                finding.snippet,
+                finding.snippet.replace("innerHTML", "textContent")
+            ),
+            confidence: Confidence::Medium,
+        }],
         _ => vec![],
     }
 }
 
 /// Suggest sanitizer-based fixes based on the finding context
 fn suggest_sanitizer_fixes(finding: &SecurityFinding, sanitizers: &[String]) -> Vec<SuggestedFix> {
-    sanitizers.iter().map(|s| {
-        // Provide context-aware suggestions based on the snippet
-        let sanitized_snippet = if finding.snippet.contains('=') {
-            // If it's an assignment, suggest wrapping the RHS
-            let parts: Vec<&str> = finding.snippet.splitn(2, '=').collect();
-            if parts.len() == 2 {
-                format!("{} = {}({})", parts[0].trim(), s, parts[1].trim())
+    sanitizers
+        .iter()
+        .map(|s| {
+            // Provide context-aware suggestions based on the snippet
+            let sanitized_snippet = if finding.snippet.contains('=') {
+                // If it's an assignment, suggest wrapping the RHS
+                let parts: Vec<&str> = finding.snippet.splitn(2, '=').collect();
+                if parts.len() == 2 {
+                    format!("{} = {}({})", parts[0].trim(), s, parts[1].trim())
+                } else {
+                    format!("{}({})", s, finding.snippet)
+                }
             } else {
                 format!("{}({})", s, finding.snippet)
-            }
-        } else {
-            format!("{}({})", s, finding.snippet)
-        };
+            };
 
-        SuggestedFix {
-            description: format!("Apply sanitizer: {} to {}", s, finding.rule_name),
-            diff: format!("- {}\n+ {}", finding.snippet, sanitized_snippet),
-            confidence: Confidence::Medium,
-        }
-    }).collect()
+            SuggestedFix {
+                description: format!("Apply sanitizer: {} to {}", s, finding.rule_name),
+                diff: format!("- {}\n+ {}", finding.snippet, sanitized_snippet),
+                confidence: Confidence::Medium,
+            }
+        })
+        .collect()
 }
 
 /// Suggest crypto fixes
@@ -1776,7 +1860,10 @@ fn suggest_crypto_fixes(finding: &SecurityFinding) -> Vec<SuggestedFix> {
     if finding.snippet.to_lowercase().contains("md5") {
         fixes.push(SuggestedFix {
             description: "Replace MD5 with SHA-256".to_string(),
-            diff: finding.snippet.replace("md5", "sha256").replace("MD5", "SHA256"),
+            diff: finding
+                .snippet
+                .replace("md5", "sha256")
+                .replace("MD5", "SHA256"),
             confidence: Confidence::High,
         });
     }
@@ -1784,7 +1871,10 @@ fn suggest_crypto_fixes(finding: &SecurityFinding) -> Vec<SuggestedFix> {
     if finding.snippet.to_lowercase().contains("sha1") {
         fixes.push(SuggestedFix {
             description: "Replace SHA1 with SHA-256".to_string(),
-            diff: finding.snippet.replace("sha1", "sha256").replace("SHA1", "SHA256"),
+            diff: finding
+                .snippet
+                .replace("sha1", "sha256")
+                .replace("SHA1", "SHA256"),
             confidence: Confidence::High,
         });
     }
@@ -1814,7 +1904,9 @@ def search(request):
     cursor.execute(query)
 "#;
         let findings = engine.scan(code, "test.py", "python");
-        assert!(findings.iter().any(|f| f.cwe.contains(&"CWE-89".to_string())));
+        assert!(findings
+            .iter()
+            .any(|f| f.cwe.contains(&"CWE-89".to_string())));
     }
 
     #[test]
@@ -1866,7 +1958,10 @@ import hashlib
 hash = hashlib.md5(password.encode())
 "#;
         let findings = engine.scan(code, "auth.py", "python");
-        assert!(findings.iter().any(|f| f.cwe.contains(&"CWE-327".to_string()) || f.cwe.contains(&"CWE-916".to_string())));
+        assert!(findings
+            .iter()
+            .any(|f| f.cwe.contains(&"CWE-327".to_string())
+                || f.cwe.contains(&"CWE-916".to_string())));
     }
 
     #[test]
@@ -1942,7 +2037,9 @@ data = pickle.loads(user_input)
 file = open(request.args.get('filename'))
 "#;
         let findings = engine.scan(code, "handler.py", "python");
-        assert!(findings.iter().any(|f| f.cwe.contains(&"CWE-22".to_string())));
+        assert!(findings
+            .iter()
+            .any(|f| f.cwe.contains(&"CWE-22".to_string())));
     }
 
     #[test]
@@ -2234,12 +2331,24 @@ echo "${safe_var}"
         let mut engine = SecurityRulesEngine::new();
         let cwe_yaml = include_str!("../rules/cwe-top25.yaml");
         let count = engine.load_ruleset_yaml(cwe_yaml).unwrap();
-        assert!(count >= 19, "cwe-top25.yaml should contain at least 19 rules");
+        assert!(
+            count >= 19,
+            "cwe-top25.yaml should contain at least 19 rules"
+        );
 
         // Verify Rust rules loaded
-        assert!(engine.get_rule("RUST-001").is_some(), "RUST-001 should exist");
-        assert!(engine.get_rule("RUST-002").is_some(), "RUST-002 should exist");
-        assert!(engine.get_rule("RUST-003").is_some(), "RUST-003 should exist");
+        assert!(
+            engine.get_rule("RUST-001").is_some(),
+            "RUST-001 should exist"
+        );
+        assert!(
+            engine.get_rule("RUST-002").is_some(),
+            "RUST-002 should exist"
+        );
+        assert!(
+            engine.get_rule("RUST-003").is_some(),
+            "RUST-003 should exist"
+        );
     }
 
     #[test]
@@ -2467,16 +2576,38 @@ function process(data: any): any {
         let count = engine.load_ruleset_yaml(owasp_yaml).unwrap();
 
         // Should have at least 48 rules (original 18 + Go 5 + Java 5 + C# 5 + Ruby 5 + Kotlin 5 + PHP 6 + TS 2 = 51, but some may be disabled)
-        assert!(count >= 48, "owasp-top10.yaml should have at least 48 rules, got {}", count);
+        assert!(
+            count >= 48,
+            "owasp-top10.yaml should have at least 48 rules, got {}",
+            count
+        );
 
         // Verify key rules from each language
         assert!(engine.get_rule("GO-001").is_some(), "Go rules should exist");
-        assert!(engine.get_rule("JAVA-001").is_some(), "Java rules should exist");
-        assert!(engine.get_rule("CSHARP-001").is_some(), "C# rules should exist");
-        assert!(engine.get_rule("RUBY-001").is_some(), "Ruby rules should exist");
-        assert!(engine.get_rule("KOTLIN-001").is_some(), "Kotlin rules should exist");
-        assert!(engine.get_rule("PHP-001").is_some(), "PHP rules should exist");
-        assert!(engine.get_rule("TS-001").is_some(), "TypeScript rules should exist");
+        assert!(
+            engine.get_rule("JAVA-001").is_some(),
+            "Java rules should exist"
+        );
+        assert!(
+            engine.get_rule("CSHARP-001").is_some(),
+            "C# rules should exist"
+        );
+        assert!(
+            engine.get_rule("RUBY-001").is_some(),
+            "Ruby rules should exist"
+        );
+        assert!(
+            engine.get_rule("KOTLIN-001").is_some(),
+            "Kotlin rules should exist"
+        );
+        assert!(
+            engine.get_rule("PHP-001").is_some(),
+            "PHP rules should exist"
+        );
+        assert!(
+            engine.get_rule("TS-001").is_some(),
+            "TypeScript rules should exist"
+        );
     }
 
     #[test]
@@ -2485,17 +2616,38 @@ function process(data: any): any {
         let engine = SecurityRulesEngine::new();
 
         // Check that rules from owasp-top10.yaml are loaded
-        assert!(engine.get_rule("GO-001").is_some(), "Go SQL injection rule should be auto-loaded");
-        assert!(engine.get_rule("JAVA-001").is_some(), "Java SQL injection rule should be auto-loaded");
-        assert!(engine.get_rule("PHP-001").is_some(), "PHP SQL injection rule should be auto-loaded");
-        assert!(engine.get_rule("TS-001").is_some(), "TypeScript any type rule should be auto-loaded");
+        assert!(
+            engine.get_rule("GO-001").is_some(),
+            "Go SQL injection rule should be auto-loaded"
+        );
+        assert!(
+            engine.get_rule("JAVA-001").is_some(),
+            "Java SQL injection rule should be auto-loaded"
+        );
+        assert!(
+            engine.get_rule("PHP-001").is_some(),
+            "PHP SQL injection rule should be auto-loaded"
+        );
+        assert!(
+            engine.get_rule("TS-001").is_some(),
+            "TypeScript any type rule should be auto-loaded"
+        );
 
         // Check that rules from cwe-top25.yaml are loaded
-        assert!(engine.get_rule("RUST-001").is_some(), "Rust unsafe rule should be auto-loaded");
-        assert!(engine.get_rule("RUST-002").is_some(), "Rust unwrap rule should be auto-loaded");
+        assert!(
+            engine.get_rule("RUST-001").is_some(),
+            "Rust unsafe rule should be auto-loaded"
+        );
+        assert!(
+            engine.get_rule("RUST-002").is_some(),
+            "Rust unwrap rule should be auto-loaded"
+        );
 
         // Check that rules from bash.yaml are loaded
-        assert!(engine.get_rule("BASH-001").is_some(), "Bash command injection rule should be auto-loaded");
+        assert!(
+            engine.get_rule("BASH-001").is_some(),
+            "Bash command injection rule should be auto-loaded"
+        );
 
         // Verify scanning works without manual YAML loading
         let rust_code = "unsafe { std::ptr::null::<i32>(); }";

@@ -74,9 +74,9 @@ if command -v wasm-opt &> /dev/null; then
         OPTIMIZED_SIZE=$(stat -f%z "$WASM_FILE" 2>/dev/null || stat -c%s "$WASM_FILE")
         SAVED=$((ORIGINAL_SIZE - OPTIMIZED_SIZE))
 
-        echo "  Original size: $(numfmt --to=iec $ORIGINAL_SIZE 2>/dev/null || echo "$ORIGINAL_SIZE bytes")"
-        echo "  Optimized size: $(numfmt --to=iec $OPTIMIZED_SIZE 2>/dev/null || echo "$OPTIMIZED_SIZE bytes")"
-        echo "  Saved: $(numfmt --to=iec $SAVED 2>/dev/null || echo "$SAVED bytes")"
+        echo "  Original size: $(numfmt --to=iec "$ORIGINAL_SIZE" 2>/dev/null || echo "$ORIGINAL_SIZE bytes")"
+        echo "  Optimized size: $(numfmt --to=iec "$OPTIMIZED_SIZE" 2>/dev/null || echo "$OPTIMIZED_SIZE bytes")"
+        echo "  Saved: $(numfmt --to=iec "$SAVED" 2>/dev/null || echo "$SAVED bytes")"
     fi
 else
     echo ""
@@ -427,5 +427,5 @@ echo ""
 WASM_FILE="$OUTPUT_DIR/narsil_mcp_wasm_bg.wasm"
 if [[ -f "$WASM_FILE" ]]; then
     SIZE=$(stat -f%z "$WASM_FILE" 2>/dev/null || stat -c%s "$WASM_FILE")
-    echo "Final WASM size: $(numfmt --to=iec $SIZE 2>/dev/null || echo "$SIZE bytes")"
+    echo "Final WASM size: $(numfmt --to=iec "$SIZE" 2>/dev/null || echo "$SIZE bytes")"
 fi

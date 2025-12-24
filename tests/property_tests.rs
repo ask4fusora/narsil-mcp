@@ -17,8 +17,11 @@ fn rust_identifier() -> impl Strategy<Value = String> {
 
 /// Generate valid function definitions
 fn rust_function() -> impl Strategy<Value = String> {
-    (rust_identifier(), prop::collection::vec(rust_identifier(), 0..5)).prop_map(
-        |(name, params)| {
+    (
+        rust_identifier(),
+        prop::collection::vec(rust_identifier(), 0..5),
+    )
+        .prop_map(|(name, params)| {
             let params_str = params
                 .iter()
                 .enumerate()
@@ -26,8 +29,7 @@ fn rust_function() -> impl Strategy<Value = String> {
                 .collect::<Vec<_>>()
                 .join(", ");
             format!("fn {}({}) {{\n    // body\n}}\n", name, params_str)
-        },
-    )
+        })
 }
 
 /// Generate valid struct definitions

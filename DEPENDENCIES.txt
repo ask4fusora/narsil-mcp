@@ -40,7 +40,7 @@ clap v4.5.53 (*)
 clap_builder v4.5.53
 clap_derive v4.5.49 (proc-macro)
 clap_lex v0.7.6
-code-intel v1.0.0 (/Users/laurence/RustroverProjects/code-intel)
+narsil-mcp v1.0.0 (/Users/laurence/RustroverProjects/narsil-mcp)
 colorchoice v1.0.4
 core-foundation v0.9.4
 core-foundation v0.9.4 (*)

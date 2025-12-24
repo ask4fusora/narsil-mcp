@@ -235,12 +235,7 @@ impl AstChunker {
                 chunks.extend(split_chunks);
             } else {
                 let chunk = self.create_chunk_from_boundary(
-                    content,
-                    file_path,
-                    lang,
-                    boundary,
-                    &imports,
-                    chunk_id,
+                    content, file_path, lang, boundary, &imports, chunk_id,
                 );
                 chunks.push(chunk);
                 chunk_id += 1;
@@ -429,9 +424,7 @@ impl AstChunker {
         // Look for identifier children
         for child in node.children(&mut cursor) {
             let child_kind = child.kind();
-            if child_kind == "identifier"
-                || child_kind == "name"
-                || child_kind == "type_identifier"
+            if child_kind == "identifier" || child_kind == "name" || child_kind == "type_identifier"
             {
                 return Some(self.node_text(&child, content));
             }
@@ -492,7 +485,12 @@ impl AstChunker {
     }
 
     /// Find the start of doc comments before a symbol
-    fn find_doc_comment_start(&self, node: &Node, _content: &str, symbol_start: usize) -> Option<usize> {
+    fn find_doc_comment_start(
+        &self,
+        node: &Node,
+        _content: &str,
+        symbol_start: usize,
+    ) -> Option<usize> {
         // Look at preceding siblings for comments
         let mut prev = node.prev_sibling();
         let mut doc_start = None;
@@ -631,8 +629,7 @@ impl AstChunker {
 
         let mut current_start = start;
         while current_start <= end {
-            let current_end =
-                (current_start + self.config.max_chunk_lines - 1).min(end);
+            let current_end = (current_start + self.config.max_chunk_lines - 1).min(end);
 
             let chunk_content = lines
                 .get(current_start.saturating_sub(1)..current_end.min(lines.len()))
@@ -663,7 +660,13 @@ impl AstChunker {
             });
 
             chunks.push(CodeChunk {
-                id: format!("{}:{}:{}:{}", file_path, *chunk_id, boundary.name, chunks.len()),
+                id: format!(
+                    "{}:{}:{}:{}",
+                    file_path,
+                    *chunk_id,
+                    boundary.name,
+                    chunks.len()
+                ),
                 content: chunk_content,
                 file_path: file_path.to_string(),
                 start_line: current_start,
@@ -870,7 +873,11 @@ impl ChunkingStats {
             by_type,
             avg_chunk_lines: total_lines as f64 / chunks.len() as f64,
             max_chunk_lines: max_lines,
-            min_chunk_lines: if min_lines == usize::MAX { 0 } else { min_lines },
+            min_chunk_lines: if min_lines == usize::MAX {
+                0
+            } else {
+                min_lines
+            },
         }
     }
 }
@@ -915,7 +922,10 @@ fn documented() {
         let chunks = chunker.chunk_file(code, "test.rs");
 
         assert!(!chunks.is_empty());
-        let fn_chunk = chunks.iter().find(|c| c.content.contains("fn documented")).unwrap();
+        let fn_chunk = chunks
+            .iter()
+            .find(|c| c.content.contains("fn documented"))
+            .unwrap();
 
         // Doc comment should be included
         assert!(fn_chunk.content.contains("/// This is a doc comment"));
@@ -947,8 +957,14 @@ enum MyEnum {
 
         // All content should be covered
         let all_content: String = chunks.iter().map(|c| c.content.clone()).collect();
-        assert!(all_content.contains("fn my_function"), "Should have function");
-        assert!(all_content.contains("struct MyStruct"), "Should have struct");
+        assert!(
+            all_content.contains("fn my_function"),
+            "Should have function"
+        );
+        assert!(
+            all_content.contains("struct MyStruct"),
+            "Should have struct"
+        );
         assert!(all_content.contains("trait MyTrait"), "Should have trait");
         assert!(all_content.contains("enum MyEnum"), "Should have enum");
     }
@@ -973,7 +989,10 @@ class MyClass:
 
         // All content should be covered
         let all_content: String = chunks.iter().map(|c| c.content.clone()).collect();
-        assert!(all_content.contains("def hello"), "Should have hello function");
+        assert!(
+            all_content.contains("def hello"),
+            "Should have hello function"
+        );
         assert!(all_content.contains("class MyClass"), "Should have class");
     }
 
@@ -1025,7 +1044,9 @@ class User {
 
         // Subsequent chunks should be SplitBlock
         if chunks.len() > 1 {
-            assert!(chunks[1..].iter().any(|c| c.chunk_type == ChunkType::SplitBlock));
+            assert!(chunks[1..]
+                .iter()
+                .any(|c| c.chunk_type == ChunkType::SplitBlock));
         }
     }
 
@@ -1043,7 +1064,10 @@ fn main() {
         let chunks = chunker.chunk_file(code, "test.rs");
 
         // Function chunk should include imports in context
-        let fn_chunk = chunks.iter().find(|c| c.content.contains("fn main")).unwrap();
+        let fn_chunk = chunks
+            .iter()
+            .find(|c| c.content.contains("fn main"))
+            .unwrap();
         assert!(!fn_chunk.imports.is_empty(), "Should have imports");
     }
 
@@ -1057,7 +1081,10 @@ fn my_func(x: i32) -> i32 {
         let chunker = AstChunker::new();
         let chunks = chunker.chunk_file(code, "test.rs");
 
-        let fn_chunk = chunks.iter().find(|c| c.content.contains("fn my_func")).unwrap();
+        let fn_chunk = chunks
+            .iter()
+            .find(|c| c.content.contains("fn my_func"))
+            .unwrap();
 
         assert!(fn_chunk.symbol_context.is_some());
         let ctx = fn_chunk.symbol_context.as_ref().unwrap();

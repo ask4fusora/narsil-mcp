@@ -20,7 +20,9 @@ impl ToolHandler for SearchCodeHandler {
         let query = args.get_str("query").unwrap_or("");
         let file_pattern = args.get_str("file_pattern");
         let max_results = args.get_u64_or("max_results", 10) as usize;
-        engine.search_code(repo, query, file_pattern, max_results).await
+        engine
+            .search_code(repo, query, file_pattern, max_results)
+            .await
     }
 }
 
@@ -38,7 +40,9 @@ impl ToolHandler for SemanticSearchHandler {
         let query = args.get_str("query").unwrap_or("");
         let max_results = args.get_u64_or("max_results", 10) as usize;
         let doc_type = args.get_str("doc_type");
-        engine.semantic_search(repo, query, max_results, doc_type).await
+        engine
+            .semantic_search(repo, query, max_results, doc_type)
+            .await
     }
 }
 
@@ -91,7 +95,9 @@ impl ToolHandler for SearchChunksHandler {
         let query = args.get_str("query").unwrap_or("");
         let chunk_type = args.get_str("chunk_type");
         let max_results = args.get_u64_or("max_results", 10) as usize;
-        engine.search_chunks(query, repo, chunk_type, max_results).await
+        engine
+            .search_chunks(query, repo, chunk_type, max_results)
+            .await
     }
 }
 
@@ -125,7 +131,9 @@ impl ToolHandler for FindSimilarToSymbolHandler {
         let repo = args.get_str("repo").unwrap_or("");
         let symbol = args.get_str("symbol").unwrap_or("");
         let max_results = args.get_u64_or("max_results", 10) as usize;
-        engine.find_similar_to_symbol(repo, symbol, max_results).await
+        engine
+            .find_similar_to_symbol(repo, symbol, max_results)
+            .await
     }
 }
 

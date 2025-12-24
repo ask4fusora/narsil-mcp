@@ -43,10 +43,7 @@ pub enum Type {
     Tuple(Vec<Type>),
 
     /// Callable/Function type
-    Function {
-        params: Vec<Type>,
-        ret: Box<Type>,
-    },
+    Function { params: Vec<Type>, ret: Box<Type> },
 
     /// Object/class instance
     Instance {
@@ -169,7 +166,10 @@ impl Type {
                 let params: Vec<String> = params.iter().map(|t| t.display_name()).collect();
                 format!("({}) -> {}", params.join(", "), ret.display_name())
             }
-            Type::Instance { class_name, type_args } => {
+            Type::Instance {
+                class_name,
+                type_args,
+            } => {
                 if type_args.is_empty() {
                     class_name.clone()
                 } else {
@@ -277,23 +277,21 @@ impl TypeEnv {
                 }
             }
             Type::List(inner) => Type::List(Box::new(self.substitute(inner))),
-            Type::Dict(k, v) => Type::Dict(
-                Box::new(self.substitute(k)),
-                Box::new(self.substitute(v)),
-            ),
+            Type::Dict(k, v) => {
+                Type::Dict(Box::new(self.substitute(k)), Box::new(self.substitute(v)))
+            }
             Type::Set(inner) => Type::Set(Box::new(self.substitute(inner))),
-            Type::Tuple(types) => {
-                Type::Tuple(types.iter().map(|t| self.substitute(t)).collect())
-            }
-            Type::Union(types) => {
-                Type::Union(types.iter().map(|t| self.substitute(t)).collect())
-            }
+            Type::Tuple(types) => Type::Tuple(types.iter().map(|t| self.substitute(t)).collect()),
+            Type::Union(types) => Type::Union(types.iter().map(|t| self.substitute(t)).collect()),
             Type::Optional(inner) => Type::Optional(Box::new(self.substitute(inner))),
             Type::Function { params, ret } => Type::Function {
                 params: params.iter().map(|t| self.substitute(t)).collect(),
                 ret: Box::new(self.substitute(ret)),
             },
-            Type::Instance { class_name, type_args } => Type::Instance {
+            Type::Instance {
+                class_name,
+                type_args,
+            } => Type::Instance {
                 class_name: class_name.clone(),
                 type_args: type_args.iter().map(|t| self.substitute(t)).collect(),
             },
@@ -751,7 +749,10 @@ impl TypeStubs {
             FunctionSig {
                 params: vec![
                     ("key".to_string(), Type::Unknown),
-                    ("default".to_string(), Type::Optional(Box::new(Type::Unknown))),
+                    (
+                        "default".to_string(),
+                        Type::Optional(Box::new(Type::Unknown)),
+                    ),
                 ],
                 ret: Type::Unknown,
                 is_method: true,
@@ -919,10 +920,13 @@ impl TypeStubs {
         array_class.methods.insert(
             "map".to_string(),
             FunctionSig {
-                params: vec![("callback".to_string(), Type::Function {
-                    params: vec![Type::Unknown],
-                    ret: Box::new(Type::Unknown),
-                })],
+                params: vec![(
+                    "callback".to_string(),
+                    Type::Function {
+                        params: vec![Type::Unknown],
+                        ret: Box::new(Type::Unknown),
+                    },
+                )],
                 ret: Type::List(Box::new(Type::Unknown)),
                 is_method: true,
             },
@@ -930,10 +934,13 @@ impl TypeStubs {
         array_class.methods.insert(
             "filter".to_string(),
             FunctionSig {
-                params: vec![("callback".to_string(), Type::Function {
-                    params: vec![Type::Unknown],
-                    ret: Box::new(Type::Bool),
-                })],
+                params: vec![(
+                    "callback".to_string(),
+                    Type::Function {
+                        params: vec![Type::Unknown],
+                        ret: Box::new(Type::Bool),
+                    },
+                )],
                 ret: Type::List(Box::new(Type::Unknown)),
                 is_method: true,
             },
@@ -942,10 +949,13 @@ impl TypeStubs {
             "reduce".to_string(),
             FunctionSig {
                 params: vec![
-                    ("callback".to_string(), Type::Function {
-                        params: vec![Type::Unknown, Type::Unknown],
-                        ret: Box::new(Type::Unknown),
-                    }),
+                    (
+                        "callback".to_string(),
+                        Type::Function {
+                            params: vec![Type::Unknown, Type::Unknown],
+                            ret: Box::new(Type::Unknown),
+                        },
+                    ),
                     ("initial".to_string(), Type::Unknown),
                 ],
                 ret: Type::Unknown,
@@ -955,10 +965,13 @@ impl TypeStubs {
         array_class.methods.insert(
             "find".to_string(),
             FunctionSig {
-                params: vec![("callback".to_string(), Type::Function {
-                    params: vec![Type::Unknown],
-                    ret: Box::new(Type::Bool),
-                })],
+                params: vec![(
+                    "callback".to_string(),
+                    Type::Function {
+                        params: vec![Type::Unknown],
+                        ret: Box::new(Type::Bool),
+                    },
+                )],
                 ret: Type::Optional(Box::new(Type::Unknown)),
                 is_method: true,
             },
@@ -971,7 +984,9 @@ impl TypeStubs {
                 is_method: true,
             },
         );
-        array_class.attributes.insert("length".to_string(), Type::Int);
+        array_class
+            .attributes
+            .insert("length".to_string(), Type::Int);
         stubs.classes.insert("Array".to_string(), array_class);
 
         // String methods
@@ -1048,7 +1063,9 @@ impl TypeStubs {
                 is_method: true,
             },
         );
-        string_class.attributes.insert("length".to_string(), Type::Int);
+        string_class
+            .attributes
+            .insert("length".to_string(), Type::Int);
         stubs.classes.insert("String".to_string(), string_class);
 
         stubs
@@ -1066,12 +1083,16 @@ impl TypeStubs {
 
     /// Look up a class method
     pub fn lookup_method(&self, class_name: &str, method: &str) -> Option<&FunctionSig> {
-        self.classes.get(class_name).and_then(|c| c.methods.get(method))
+        self.classes
+            .get(class_name)
+            .and_then(|c| c.methods.get(method))
     }
 
     /// Look up a class attribute
     pub fn lookup_attribute(&self, class_name: &str, attr: &str) -> Option<&Type> {
-        self.classes.get(class_name).and_then(|c| c.attributes.get(attr))
+        self.classes
+            .get(class_name)
+            .and_then(|c| c.attributes.get(attr))
     }
 }
 
@@ -1173,10 +1194,7 @@ impl InferredTypes {
     pub fn to_markdown(&self) -> String {
         let mut md = String::new();
 
-        md.push_str(&format!(
-            "# Type Inference: `{}`\n\n",
-            self.function_name
-        ));
+        md.push_str(&format!("# Type Inference: `{}`\n\n", self.function_name));
         md.push_str(&format!("**File**: `{}`\n\n", self.file_path));
 
         // Parameters
@@ -1267,7 +1285,9 @@ impl<'a> TypeInferencer<'a> {
     /// Infer types for a function from its CFG
     pub fn infer_from_cfg(&mut self, params: &[(String, Option<Type>)]) -> InferredTypes {
         let mut result = InferredTypes::new(
-            self.cfg.map(|c| c.function_name.as_str()).unwrap_or("unknown"),
+            self.cfg
+                .map(|c| c.function_name.as_str())
+                .unwrap_or("unknown"),
             self.cfg.map(|c| c.file_path.as_str()).unwrap_or("unknown"),
         );
 
@@ -1315,7 +1335,10 @@ impl<'a> TypeInferencer<'a> {
 
     fn infer_block(&mut self, block_id: BlockId, result: &mut InferredTypes) -> Result<()> {
         let cfg = self.cfg.ok_or_else(|| anyhow!("No CFG available"))?;
-        let block = cfg.blocks.get(&block_id).ok_or_else(|| anyhow!("Invalid block"))?;
+        let block = cfg
+            .blocks
+            .get(&block_id)
+            .ok_or_else(|| anyhow!("Invalid block"))?;
 
         for stmt in &block.statements {
             match &stmt.kind {
@@ -1332,10 +1355,8 @@ impl<'a> TypeInferencer<'a> {
                 }
                 StatementKind::Return => {
                     let ret_type = self.infer_expr_from_text(&stmt.text)?;
-                    self.constraints.push(Constraint::Equal(
-                        result.return_type.clone(),
-                        ret_type,
-                    ));
+                    self.constraints
+                        .push(Constraint::Equal(result.return_type.clone(), ret_type));
                 }
                 StatementKind::Call { function } => {
                     // Look up function return type
@@ -1555,7 +1576,16 @@ impl<'a> TypeInferencer<'a> {
                 self.unify(v1, v2)
             }
             (Type::Optional(a), Type::Optional(b)) => self.unify(a, b),
-            (Type::Function { params: p1, ret: r1 }, Type::Function { params: p2, ret: r2 }) => {
+            (
+                Type::Function {
+                    params: p1,
+                    ret: r1,
+                },
+                Type::Function {
+                    params: p2,
+                    ret: r2,
+                },
+            ) => {
                 if p1.len() != p2.len() {
                     return Err(anyhow!("Function parameter count mismatch"));
                 }
@@ -1566,13 +1596,18 @@ impl<'a> TypeInferencer<'a> {
             }
             (a, b) if a == b => Ok(()),
             (Type::Unknown, _) | (_, Type::Unknown) => Ok(()),
-            _ => Err(anyhow!("Cannot unify {} with {}", t1.display_name(), t2.display_name())),
+            _ => Err(anyhow!(
+                "Cannot unify {} with {}",
+                t1.display_name(),
+                t2.display_name()
+            )),
         }
     }
 
     /// Infer types from a tree-sitter node
     pub fn infer_from_node(&mut self, node: Node, source: &[u8]) -> Result<InferredTypes> {
-        let function_name = extract_function_name(node, source).unwrap_or_else(|| "anonymous".to_string());
+        let function_name =
+            extract_function_name(node, source).unwrap_or_else(|| "anonymous".to_string());
         let file_path = "";
 
         let mut result = InferredTypes::new(&function_name, file_path);
@@ -1624,7 +1659,8 @@ impl<'a> TypeInferencer<'a> {
                 let child = cursor.node();
                 let kind = child.kind();
 
-                if kind == "identifier" || kind == "typed_parameter" || kind == "required_parameter" {
+                if kind == "identifier" || kind == "typed_parameter" || kind == "required_parameter"
+                {
                     if let Ok(text) = child.utf8_text(source) {
                         let name = text.split(':').next().unwrap_or(text).trim().to_string();
                         if !name.is_empty() && name != "self" && name != "this" {
@@ -1709,7 +1745,9 @@ impl<'a> TypeInferencer<'a> {
                     let vars = extract_identifiers(text);
 
                     for var in vars {
-                        if self.env.lookup(&var).is_none() && self.stubs.lookup_builtin(&var).is_none() {
+                        if self.env.lookup(&var).is_none()
+                            && self.stubs.lookup_builtin(&var).is_none()
+                        {
                             // Check if it's a keyword or literal
                             if !is_keyword(&var) && self.infer_literal(&var).is_none() {
                                 errors.push(TypeError {
@@ -1928,7 +1966,10 @@ mod tests {
         inferencer.env.bind("x".to_string(), Type::Int);
 
         assert_eq!(inferencer.infer_expr_from_text("42").unwrap(), Type::Int);
-        assert_eq!(inferencer.infer_expr_from_text("\"hello\"").unwrap(), Type::String);
+        assert_eq!(
+            inferencer.infer_expr_from_text("\"hello\"").unwrap(),
+            Type::String
+        );
         assert_eq!(inferencer.infer_expr_from_text("x").unwrap(), Type::Int);
         assert!(matches!(
             inferencer.infer_expr_from_text("[]").unwrap(),
@@ -1947,16 +1988,28 @@ mod tests {
         inferencer.env.bind("y".to_string(), Type::Int);
 
         assert_eq!(inferencer.infer_expr_from_text("x + y").unwrap(), Type::Int);
-        assert_eq!(inferencer.infer_expr_from_text("x == y").unwrap(), Type::Bool);
-        assert_eq!(inferencer.infer_expr_from_text("x > y").unwrap(), Type::Bool);
+        assert_eq!(
+            inferencer.infer_expr_from_text("x == y").unwrap(),
+            Type::Bool
+        );
+        assert_eq!(
+            inferencer.infer_expr_from_text("x > y").unwrap(),
+            Type::Bool
+        );
     }
 
     #[test]
     fn test_infer_function_call() {
         let mut inferencer = TypeInferencer::new("", None, "python");
 
-        assert_eq!(inferencer.infer_expr_from_text("len([])").unwrap(), Type::Int);
-        assert_eq!(inferencer.infer_expr_from_text("str(42)").unwrap(), Type::String);
+        assert_eq!(
+            inferencer.infer_expr_from_text("len([])").unwrap(),
+            Type::Int
+        );
+        assert_eq!(
+            inferencer.infer_expr_from_text("str(42)").unwrap(),
+            Type::String
+        );
     }
 
     #[test]
@@ -1965,10 +2018,7 @@ mod tests {
         let simplified = union.simplify();
         assert_eq!(simplified, Type::Int);
 
-        let nested = Type::Union(vec![
-            Type::Union(vec![Type::Int, Type::String]),
-            Type::Bool,
-        ]);
+        let nested = Type::Union(vec![Type::Union(vec![Type::Int, Type::String]), Type::Bool]);
         let simplified = nested.simplify();
         assert!(matches!(simplified, Type::Union(v) if v.len() == 3));
     }

@@ -405,7 +405,10 @@ impl ControlFlowGraph {
             if !block.statements.is_empty() {
                 md.push_str("```\n");
                 for stmt in &block.statements {
-                    md.push_str(&format!("{:4}: {:?} - {}\n", stmt.line, stmt.kind, stmt.text));
+                    md.push_str(&format!(
+                        "{:4}: {:?} - {}\n",
+                        stmt.line, stmt.kind, stmt.text
+                    ));
                 }
                 md.push_str("```\n\n");
             }
@@ -689,21 +692,11 @@ impl CfgBuilder {
 
         match kind {
             // Control flow statements
-            "if_statement" | "if_expression" => {
-                self.process_if(current, node, source)
-            }
-            "while_statement" | "while_expression" => {
-                self.process_while(current, node, source)
-            }
-            "for_statement" | "for_expression" => {
-                self.process_for(current, node, source)
-            }
-            "loop_expression" => {
-                self.process_loop(current, node, source)
-            }
-            "match_expression" => {
-                self.process_match(current, node, source)
-            }
+            "if_statement" | "if_expression" => self.process_if(current, node, source),
+            "while_statement" | "while_expression" => self.process_while(current, node, source),
+            "for_statement" | "for_expression" => self.process_for(current, node, source),
+            "loop_expression" => self.process_loop(current, node, source),
+            "match_expression" => self.process_match(current, node, source),
             "return_statement" | "return_expression" => {
                 // Return creates an exit
                 self.add_statement(
@@ -758,7 +751,10 @@ impl CfgBuilder {
                 Ok(next)
             }
             // Regular statements
-            "let_declaration" | "let_statement" | "assignment_expression" | "expression_statement" => {
+            "let_declaration"
+            | "let_statement"
+            | "assignment_expression"
+            | "expression_statement" => {
                 let stmt_kind = if kind.contains("let") {
                     StatementKind::Assignment {
                         variable: extract_variable_name(node, source).unwrap_or_default(),
@@ -786,9 +782,7 @@ impl CfgBuilder {
                 Ok(current)
             }
             // Block - process contents
-            "block" | "compound_statement" => {
-                self.process_block_node(current, node, source)
-            }
+            "block" | "compound_statement" => self.process_block_node(current, node, source),
             // Other
             _ => {
                 // For other nodes, just add as expression if they have content
@@ -807,12 +801,7 @@ impl CfgBuilder {
         }
     }
 
-    fn process_if(
-        &mut self,
-        current: BlockId,
-        node: Node,
-        source: &[u8],
-    ) -> Result<BlockId> {
+    fn process_if(&mut self, current: BlockId, node: Node, source: &[u8]) -> Result<BlockId> {
         let line = node.start_position().row + 1;
         let condition = extract_condition(node, source).unwrap_or_default();
 
@@ -849,16 +838,21 @@ impl CfgBuilder {
                     then_block,
                     Statement {
                         line: pattern.start_position().row + 1,
-                        kind: StatementKind::PatternBinding { variables: bindings },
-                        text: format!("if let {}", pattern_text.chars().take(85).collect::<String>()),
+                        kind: StatementKind::PatternBinding {
+                            variables: bindings,
+                        },
+                        text: format!(
+                            "if let {}",
+                            pattern_text.chars().take(85).collect::<String>()
+                        ),
                     },
                 );
             }
         }
 
         // Process then branch
-        if let Some(then_body) = find_child_by_kind(node, "block")
-            .or_else(|| find_child_by_kind(node, "consequence"))
+        if let Some(then_body) =
+            find_child_by_kind(node, "block").or_else(|| find_child_by_kind(node, "consequence"))
         {
             let then_exit = self.process_block_node(then_block, then_body, source)?;
             self.add_edge(then_exit, merge_block, EdgeKind::FallThrough);
@@ -883,12 +877,7 @@ impl CfgBuilder {
         Ok(merge_block)
     }
 
-    fn process_while(
-        &mut self,
-        current: BlockId,
-        node: Node,
-        source: &[u8],
-    ) -> Result<BlockId> {
+    fn process_while(&mut self, current: BlockId, node: Node, source: &[u8]) -> Result<BlockId> {
         let condition = extract_condition(node, source).unwrap_or_default();
 
         // Header block (condition check)
@@ -930,8 +919,13 @@ impl CfgBuilder {
                     body_block,
                     Statement {
                         line: pattern.start_position().row + 1,
-                        kind: StatementKind::PatternBinding { variables: bindings },
-                        text: format!("while let {}", pattern_text.chars().take(82).collect::<String>()),
+                        kind: StatementKind::PatternBinding {
+                            variables: bindings,
+                        },
+                        text: format!(
+                            "while let {}",
+                            pattern_text.chars().take(82).collect::<String>()
+                        ),
                     },
                 );
             }
@@ -950,12 +944,7 @@ impl CfgBuilder {
         Ok(exit_block)
     }
 
-    fn process_for(
-        &mut self,
-        current: BlockId,
-        node: Node,
-        source: &[u8],
-    ) -> Result<BlockId> {
+    fn process_for(&mut self, current: BlockId, node: Node, source: &[u8]) -> Result<BlockId> {
         // Similar to while but with initialization
         let header = self.create_block("for_header");
         self.add_edge(current, header, EdgeKind::FallThrough);
@@ -987,7 +976,9 @@ impl CfgBuilder {
                     body_block,
                     Statement {
                         line: pattern.start_position().row + 1,
-                        kind: StatementKind::PatternBinding { variables: bindings },
+                        kind: StatementKind::PatternBinding {
+                            variables: bindings,
+                        },
                         text: format!("for {}", pattern_text.chars().take(90).collect::<String>()),
                     },
                 );
@@ -1006,12 +997,7 @@ impl CfgBuilder {
         Ok(exit_block)
     }
 
-    fn process_loop(
-        &mut self,
-        current: BlockId,
-        node: Node,
-        source: &[u8],
-    ) -> Result<BlockId> {
+    fn process_loop(&mut self, current: BlockId, node: Node, source: &[u8]) -> Result<BlockId> {
         // Infinite loop (loop {})
         let header = self.create_block("loop_header");
         self.add_edge(current, header, EdgeKind::FallThrough);
@@ -1045,12 +1031,7 @@ impl CfgBuilder {
         Ok(exit_block)
     }
 
-    fn process_match(
-        &mut self,
-        current: BlockId,
-        node: Node,
-        source: &[u8],
-    ) -> Result<BlockId> {
+    fn process_match(&mut self, current: BlockId, node: Node, source: &[u8]) -> Result<BlockId> {
         let condition = extract_condition(node, source).unwrap_or_default();
 
         self.add_statement(
@@ -1085,12 +1066,15 @@ impl CfgBuilder {
                     if let Some(pattern) = find_match_arm_pattern(arm_node) {
                         let bindings = extract_pattern_bindings(pattern, source);
                         if !bindings.is_empty() {
-                            let pattern_text = pattern.utf8_text(source).unwrap_or("pattern").to_string();
+                            let pattern_text =
+                                pattern.utf8_text(source).unwrap_or("pattern").to_string();
                             self.add_statement(
                                 arm_block,
                                 Statement {
                                     line: pattern.start_position().row + 1,
-                                    kind: StatementKind::PatternBinding { variables: bindings },
+                                    kind: StatementKind::PatternBinding {
+                                        variables: bindings,
+                                    },
                                     text: pattern_text.chars().take(100).collect(),
                                 },
                             );
@@ -1403,7 +1387,8 @@ fn extract_condition(node: Node, source: &[u8]) -> Option<String> {
             // Common condition node types
             if child.kind().contains("condition")
                 || child.kind() == "parenthesized_expression"
-                || (child.kind() == "binary_expression" && child.start_position().row == node.start_position().row)
+                || (child.kind() == "binary_expression"
+                    && child.start_position().row == node.start_position().row)
             {
                 return child.utf8_text(source).ok().map(|s| s.to_string());
             }
@@ -1555,7 +1540,8 @@ fn extract_bindings_recursive(node: Node, source: &[u8], bindings: &mut Vec<Stri
                 // Filter out type constructors and ensure it starts with lowercase (variable naming convention)
                 if !is_type_constructor(name)
                     && !name.is_empty()
-                    && (name.starts_with('_') || name.chars().next().is_some_and(|c| c.is_lowercase()))
+                    && (name.starts_with('_')
+                        || name.chars().next().is_some_and(|c| c.is_lowercase()))
                 {
                     bindings.push(name.to_string());
                 }
@@ -2310,7 +2296,11 @@ mod tests {
         }
 
         if let Some(bindings) = find_pattern(root, source.as_bytes()) {
-            assert!(bindings.contains(&"value".to_string()), "Should extract 'value' binding, got {:?}", bindings);
+            assert!(
+                bindings.contains(&"value".to_string()),
+                "Should extract 'value' binding, got {:?}",
+                bindings
+            );
             found_binding = true;
         }
 
@@ -2327,7 +2317,10 @@ mod tests {
         let source = r#"fn test() { match x { Some(value) => {} _ => {} } }"#;
         let tree = parser.parse(source, None).unwrap();
 
-        fn find_first_match_arm_pattern(node: tree_sitter::Node, source: &[u8]) -> Option<Vec<String>> {
+        fn find_first_match_arm_pattern(
+            node: tree_sitter::Node,
+            source: &[u8],
+        ) -> Option<Vec<String>> {
             if node.kind() == "match_arm" {
                 let mut cursor = node.walk();
                 if cursor.goto_first_child() {
@@ -2361,8 +2354,16 @@ mod tests {
             .expect("Should find pattern");
 
         // Should extract 'value' but NOT 'Some'
-        assert!(bindings.contains(&"value".to_string()), "Should extract 'value', got {:?}", bindings);
-        assert!(!bindings.iter().any(|s| s == "Some"), "Should NOT extract 'Some' constructor, got {:?}", bindings);
+        assert!(
+            bindings.contains(&"value".to_string()),
+            "Should extract 'value', got {:?}",
+            bindings
+        );
+        assert!(
+            !bindings.iter().any(|s| s == "Some"),
+            "Should NOT extract 'Some' constructor, got {:?}",
+            bindings
+        );
     }
 
     #[test]
@@ -2375,7 +2376,10 @@ mod tests {
         let source = r#"fn test() { match x { Ok(Some(inner)) => {} _ => {} } }"#;
         let tree = parser.parse(source, None).unwrap();
 
-        fn find_first_match_arm_pattern(node: tree_sitter::Node, source: &[u8]) -> Option<Vec<String>> {
+        fn find_first_match_arm_pattern(
+            node: tree_sitter::Node,
+            source: &[u8],
+        ) -> Option<Vec<String>> {
             if node.kind() == "match_arm" {
                 let mut cursor = node.walk();
                 if cursor.goto_first_child() {
@@ -2409,9 +2413,19 @@ mod tests {
             .expect("Should find pattern");
 
         // Should extract 'inner' but NOT 'Ok' or 'Some'
-        assert!(bindings.contains(&"inner".to_string()), "Should extract 'inner', got {:?}", bindings);
-        assert!(!bindings.iter().any(|s| s == "Ok"), "Should NOT extract 'Ok' constructor");
-        assert!(!bindings.iter().any(|s| s == "Some"), "Should NOT extract 'Some' constructor");
+        assert!(
+            bindings.contains(&"inner".to_string()),
+            "Should extract 'inner', got {:?}",
+            bindings
+        );
+        assert!(
+            !bindings.iter().any(|s| s == "Ok"),
+            "Should NOT extract 'Ok' constructor"
+        );
+        assert!(
+            !bindings.iter().any(|s| s == "Some"),
+            "Should NOT extract 'Some' constructor"
+        );
     }
 
     #[test]
@@ -2458,7 +2472,11 @@ mod tests {
         let bindings = find_for_pattern(tree.root_node(), source.as_bytes())
             .expect("Should find for loop pattern");
 
-        assert!(bindings.contains(&"item".to_string()), "Should extract 'item', got {:?}", bindings);
+        assert!(
+            bindings.contains(&"item".to_string()),
+            "Should extract 'item', got {:?}",
+            bindings
+        );
     }
 
     #[test]
@@ -2504,7 +2522,15 @@ mod tests {
         let bindings = find_for_pattern(tree.root_node(), source.as_bytes())
             .expect("Should find for loop pattern");
 
-        assert!(bindings.contains(&"a".to_string()), "Should extract 'a', got {:?}", bindings);
-        assert!(bindings.contains(&"b".to_string()), "Should extract 'b', got {:?}", bindings);
+        assert!(
+            bindings.contains(&"a".to_string()),
+            "Should extract 'a', got {:?}",
+            bindings
+        );
+        assert!(
+            bindings.contains(&"b".to_string()),
+            "Should extract 'b', got {:?}",
+            bindings
+        );
     }
 }

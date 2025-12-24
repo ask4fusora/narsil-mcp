@@ -75,7 +75,7 @@ pub trait EmbeddingBackend: Send + Sync {
 pub mod onnx {
     use super::*;
     use ndarray::Array2;
-    use ort::session::{Session, builder::GraphOptimizationLevel};
+    use ort::session::{builder::GraphOptimizationLevel, Session};
     use ort::value::TensorRef;
     use std::sync::Mutex;
     use tokenizers::Tokenizer;
@@ -197,7 +197,9 @@ pub mod onnx {
             let attention_mask_tensor = TensorRef::from_array_view(attention_mask_array.view())?;
 
             // Lock the session for mutable access (ort 2.0 requires &mut self for run)
-            let mut session = self.session.lock()
+            let mut session = self
+                .session
+                .lock()
                 .map_err(|e| anyhow::anyhow!("Failed to lock session: {}", e))?;
 
             let outputs = session.run(ort::inputs![
@@ -207,7 +209,8 @@ pub mod onnx {
 
             // Extract embeddings - ort 2.0 API
             // Try to get output by name first, then fallback to first
-            let output: &ort::value::Value = outputs.get("last_hidden_state")
+            let output: &ort::value::Value = outputs
+                .get("last_hidden_state")
                 .ok_or_else(|| anyhow::anyhow!("No output tensor found from ONNX model"))?;
 
             // ort 2.0: try_extract_tensor returns (Shape, &[T])
@@ -335,9 +338,7 @@ impl EmbeddingBackend for ApiEmbedder {
             request = request.header("Authorization", format!("Bearer {}", key));
         }
 
-        let resp = request
-            .send()
-            .context("Failed to send embedding request")?;
+        let resp = request.send().context("Failed to send embedding request")?;
 
         let status = resp.status();
         let text = resp.text().context("Failed to read response body")?;
@@ -346,8 +347,12 @@ impl EmbeddingBackend for ApiEmbedder {
             anyhow::bail!("API error ({}): {}", status, text);
         }
 
-        let response: Response = serde_json::from_str(&text)
-            .with_context(|| format!("Failed to parse embedding response: {}", &text[..text.len().min(200)]))?;
+        let response: Response = serde_json::from_str(&text).with_context(|| {
+            format!(
+                "Failed to parse embedding response: {}",
+                &text[..text.len().min(200)]
+            )
+        })?;
 
         Ok(response.data.into_iter().map(|d| d.embedding).collect())
     }
@@ -380,9 +385,9 @@ pub mod vector_index {
                 dimensions: dimension,
                 metric: MetricKind::Cos,
                 quantization: ScalarKind::F32,
-                connectivity: 16,       // M parameter for HNSW
-                expansion_add: 128,     // ef_construction
-                expansion_search: 64,   // ef_search
+                connectivity: 16,     // M parameter for HNSW
+                expansion_add: 128,   // ef_construction
+                expansion_search: 64, // ef_search
                 multi: false,
             };
 
@@ -415,9 +420,8 @@ pub mod vector_index {
                         .iter()
                         .zip(results.distances.iter())
                         .filter_map(|(&idx, &dist)| {
-                            id_map
-                                .get(idx as usize)
-                                .map(|id| (id.clone(), 1.0 - dist)) // Convert distance to similarity
+                            id_map.get(idx as usize).map(|id| (id.clone(), 1.0 - dist))
+                            // Convert distance to similarity
                         })
                         .collect()
                 }
@@ -723,10 +727,7 @@ impl NeuralEngine {
     /// Find code similar to a specific document
     pub fn find_similar(&self, doc_id: &str, k: usize) -> Result<Vec<NeuralSearchResult>> {
         let documents = self.documents.read();
-        let doc = documents
-            .get(doc_id)
-            .context("Document not found")?
-            .clone();
+        let doc = documents.get(doc_id).context("Document not found")?.clone();
         drop(documents);
 
         // Re-embed the document content to get its embedding

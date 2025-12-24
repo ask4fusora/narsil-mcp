@@ -178,7 +178,7 @@ impl StreamingResponse {
             format!("Starting {} - {} items to process", operation, total),
             Some(0),
         ))
-            .await?;
+        .await?;
 
         let mut all_results = Vec::new();
 
@@ -203,7 +203,7 @@ impl StreamingResponse {
                 message,
                 Some(progress.percentage()),
             ))
-                .await?;
+            .await?;
 
             // Small delay to avoid overwhelming the client
             tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
@@ -214,7 +214,7 @@ impl StreamingResponse {
             &progress.token,
             format!("Completed {} - {} items processed", operation, total),
         ))
-            .await?;
+        .await?;
 
         Ok((all_results, progress))
     }
@@ -374,12 +374,24 @@ mod tests {
         let response = StreamingResponse::new(config);
 
         // Should stream when above threshold
-        assert!(response.should_stream(51), "51 items should trigger streaming with threshold 50");
-        assert!(response.should_stream(100), "100 items should trigger streaming with threshold 50");
+        assert!(
+            response.should_stream(51),
+            "51 items should trigger streaming with threshold 50"
+        );
+        assert!(
+            response.should_stream(100),
+            "100 items should trigger streaming with threshold 50"
+        );
 
         // Should not stream when at or below threshold
-        assert!(!response.should_stream(50), "50 items should not trigger streaming with threshold 50");
-        assert!(!response.should_stream(25), "25 items should not trigger streaming with threshold 50");
+        assert!(
+            !response.should_stream(50),
+            "50 items should not trigger streaming with threshold 50"
+        );
+        assert!(
+            !response.should_stream(25),
+            "25 items should not trigger streaming with threshold 50"
+        );
     }
 
     #[test]
@@ -391,6 +403,9 @@ mod tests {
         let response = StreamingResponse::new(config);
 
         // Should never stream when disabled
-        assert!(!response.should_stream(1000), "Should not stream when disabled, even with 1000 items");
+        assert!(
+            !response.should_stream(1000),
+            "Should not stream when disabled, even with 1000 items"
+        );
     }
 }

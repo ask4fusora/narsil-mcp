@@ -37,7 +37,9 @@ impl ToolHandler for GetCallersHandler {
         let function = args.get_str("function").unwrap_or("");
         let transitive = args.get_bool_or("transitive", false);
         let max_depth = args.get_u64_or("max_depth", 5) as usize;
-        engine.get_callers(repo, function, transitive, max_depth).await
+        engine
+            .get_callers(repo, function, transitive, max_depth)
+            .await
     }
 }
 
@@ -55,7 +57,9 @@ impl ToolHandler for GetCalleesHandler {
         let function = args.get_str("function").unwrap_or("");
         let transitive = args.get_bool_or("transitive", false);
         let max_depth = args.get_u64_or("max_depth", 5) as usize;
-        engine.get_callees(repo, function, transitive, max_depth).await
+        engine
+            .get_callees(repo, function, transitive, max_depth)
+            .await
     }
 }
 
