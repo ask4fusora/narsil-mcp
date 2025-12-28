@@ -206,6 +206,9 @@ async fn main() -> Result<()> {
         lsp_config,
         neural_config,
     };
+
+    // NOTE: Engine creation is now fast and returns immediately.
+    // Indexing happens in background to allow quick MCP server startup.
     let mut engine = index::CodeIntelEngine::with_options(args.index_path, repos, options).await?;
 
     // Initialize remote repository support if enabled
@@ -218,10 +221,22 @@ async fn main() -> Result<()> {
 
     let engine = Arc::new(engine);
 
-    if args.reindex {
-        info!("Re-indexing all repositories...");
-        engine.reindex_all().await?;
-    }
+    // Start background initialization task (indexing repos, git init)
+    let init_engine = Arc::clone(&engine);
+    let reindex_flag = args.reindex;
+    tokio::spawn(async move {
+        if reindex_flag {
+            info!("Re-indexing all repositories...");
+            if let Err(e) = init_engine.reindex_all().await {
+                warn!("Error during re-indexing: {}", e);
+            }
+        } else {
+            // Complete deferred initialization
+            if let Err(e) = init_engine.complete_initialization().await {
+                warn!("Error during background initialization: {}", e);
+            }
+        }
+    });
 
     // Start watch mode in background if enabled
     if args.watch {

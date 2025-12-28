@@ -35,7 +35,7 @@ A Rust-powered MCP (Model Context Protocol) server providing AI assistants with 
 - **Written in Rust** - Blazingly fast, memory-safe, single binary (~30MB)
 - **Tree-sitter powered** - Accurate, incremental parsing for 14 languages
 - **Zero config** - Point at repos and go
-- **MCP compliant** - Works with Claude, Cursor, VS Code Copilot, and any MCP client
+- **MCP compliant** - Works with Claude, Cursor, VS Code Copilot, Zed, and any MCP client
 - **Privacy-first** - Fully local, no data leaves your machine
 - **Parallel indexing** - Uses all cores via Rayon
 - **Smart excerpts** - Expands to complete syntactic scopes
@@ -375,6 +375,20 @@ function calc(x) {
 ```
 
 > **Note for Copilot Enterprise**: MCP support requires VS Code 1.102+ and must be enabled by your organization administrator.
+
+**Zed** (`settings.json` → Context Servers):
+```json
+{
+  "context_servers": {
+    "narsil-mcp": {
+      "command": "narsil-mcp",
+      "args": ["--repos", "/path/to/your/projects"]
+    }
+  }
+}
+```
+
+> **Note for Zed**: narsil-mcp now starts immediately and indexes in the background, preventing initialization timeouts.
 
 ### WebAssembly (Browser) Usage (Phase 9)
 
@@ -928,7 +942,7 @@ This release marks production readiness with 359 tests, comprehensive benchmarks
 - **4 new languages** - Bash, Ruby, Kotlin, PHP support
 - **111 bundled security rules** - OWASP, CWE, crypto, secrets detection
 - **Security hardening** - Path traversal prevention, secret redaction, file size limits
-- **IDE configs included** - Claude Desktop, Cursor, VS Code templates
+- **IDE configs included** - Claude Desktop, Cursor, VS Code, Zed templates
 
 ## License
 

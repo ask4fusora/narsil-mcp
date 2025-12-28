@@ -11,6 +11,7 @@ use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::SystemTime;
 use tracing::{info, warn};
@@ -116,6 +117,12 @@ pub struct CodeIntelEngine {
     remote_manager: Option<Arc<tokio::sync::Mutex<RemoteRepoManager>>>,
     /// Cached security rules engine (avoids reloading rules on each scan)
     security_engine: Arc<crate::security_rules::SecurityRulesEngine>,
+    /// Tracks whether background initialization has completed
+    initialization_complete: AtomicBool,
+    /// Number of repositories that have been fully indexed
+    indexed_repos_count: AtomicUsize,
+    /// Total number of repositories to index
+    total_repos_count: AtomicUsize,
 }
 
 impl CodeIntelEngine {
@@ -187,6 +194,8 @@ impl CodeIntelEngine {
         // Pre-initialize security rules engine (caches compiled patterns)
         let security_engine = Arc::new(crate::security_rules::SecurityRulesEngine::new());
 
+        let total_repos = expanded_repos.len();
+
         let engine = Self {
             index_path: expanded_index,
             repo_paths: expanded_repos.clone(),
@@ -205,6 +214,9 @@ impl CodeIntelEngine {
             lsp_manager,
             remote_manager: None,
             security_engine,
+            initialization_complete: AtomicBool::new(false),
+            indexed_repos_count: AtomicUsize::new(0),
+            total_repos_count: AtomicUsize::new(total_repos),
         };
 
         // Try to load persisted indexes first if persistence is enabled
@@ -293,29 +305,64 @@ impl CodeIntelEngine {
             }
         }
 
+        // Initialize watch mode if enabled
+        if options.watch_enabled {
+            info!("Watch mode enabled - monitoring for file changes");
+            // Note: Watch mode runs asynchronously. Use process_watch_events() to handle changes.
+        }
+
+        // NOTE: We now return the engine IMMEDIATELY without blocking on indexing.
+        // This allows the MCP server to respond to initialize requests quickly.
+        // Call complete_initialization() to finish indexing in the background.
+        info!(
+            "Engine created (initialization deferred for {} repos)",
+            total_repos
+        );
+
+        Ok(engine)
+    }
+
+    /// Complete the deferred initialization by indexing all repositories
+    /// and initializing git. This should be called in the background after
+    /// the engine is created to allow the MCP server to respond quickly.
+    pub async fn complete_initialization(&self) -> Result<()> {
+        if self.initialization_complete.load(Ordering::Acquire) {
+            info!("Initialization already complete, skipping");
+            return Ok(());
+        }
+
+        info!("Starting background initialization");
+
         // Index repos that weren't loaded from persistence
-        for repo_path in &expanded_repos {
+        for repo_path in &self.repo_paths {
             let repo_name = repo_path
                 .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("unknown")
                 .to_string();
 
-            if !loaded_repos.contains(&repo_name) {
-                if repo_path.exists() {
-                    info!("Indexing repository: {:?}", repo_path);
-                    if let Err(e) = engine.index_repo(repo_path).await {
-                        warn!("Failed to index {:?}: {}", repo_path, e);
-                    }
+            // Check if already loaded from persistence
+            if self.repos.contains_key(&repo_name) {
+                info!("Repository {} already loaded from cache", repo_name);
+                self.indexed_repos_count.fetch_add(1, Ordering::Release);
+                continue;
+            }
+
+            if repo_path.exists() {
+                info!("Indexing repository: {:?}", repo_path);
+                if let Err(e) = self.index_repo(repo_path).await {
+                    warn!("Failed to index {:?}: {}", repo_path, e);
                 } else {
-                    warn!("Repository path does not exist: {:?}", repo_path);
+                    self.indexed_repos_count.fetch_add(1, Ordering::Release);
                 }
+            } else {
+                warn!("Repository path does not exist: {:?}", repo_path);
             }
         }
 
         // Initialize git repos if enabled
-        if options.git_enabled {
-            for repo_path in &expanded_repos {
+        if self.options.git_enabled {
+            for repo_path in &self.repo_paths {
                 if repo_path.exists() {
                     let repo_name = repo_path
                         .file_name()
@@ -326,7 +373,7 @@ impl CodeIntelEngine {
                     match GitRepo::new(repo_path) {
                         Ok(git_repo) => {
                             info!("Git enabled for repository: {}", repo_name);
-                            engine.git_repos.insert(repo_name, git_repo);
+                            self.git_repos.insert(repo_name, git_repo);
                         }
                         Err(e) => {
                             warn!("Failed to initialize git for {}: {}", repo_name, e);
@@ -336,13 +383,46 @@ impl CodeIntelEngine {
             }
         }
 
-        // Initialize watch mode if enabled
-        if options.watch_enabled {
-            info!("Watch mode enabled - monitoring for file changes");
-            // Note: Watch mode runs asynchronously. Use process_watch_events() to handle changes.
-        }
+        self.initialization_complete.store(true, Ordering::Release);
+        info!("Background initialization complete");
 
-        Ok(engine)
+        Ok(())
+    }
+
+    /// Check if background initialization has completed
+    pub fn is_fully_initialized(&self) -> bool {
+        self.initialization_complete.load(Ordering::Acquire)
+    }
+
+    /// Get detailed initialization status
+    pub fn get_initialization_status(&self) -> HashMap<String, serde_json::Value> {
+        let mut status = HashMap::new();
+        status.insert(
+            "is_initialized".to_string(),
+            serde_json::Value::Bool(self.is_fully_initialized()),
+        );
+        status.insert(
+            "indexed_repos".to_string(),
+            serde_json::Value::Number(self.indexed_repos_count.load(Ordering::Acquire).into()),
+        );
+        status.insert(
+            "total_repos".to_string(),
+            serde_json::Value::Number(self.total_repos_count.load(Ordering::Acquire).into()),
+        );
+        status.insert(
+            "progress_percentage".to_string(),
+            serde_json::Value::Number(
+                if self.total_repos_count.load(Ordering::Acquire) > 0 {
+                    ((self.indexed_repos_count.load(Ordering::Acquire) as f64
+                        / self.total_repos_count.load(Ordering::Acquire) as f64)
+                        * 100.0) as i64
+                } else {
+                    100
+                }
+                .into(),
+            ),
+        );
+        status
     }
 
     async fn index_repos(&self) -> Result<()> {
@@ -1867,6 +1947,39 @@ impl CodeIntelEngine {
     pub async fn get_index_status(&self, repo: Option<&str>) -> Result<String> {
         let mut output = String::new();
         output.push_str("# Index Status\n\n");
+
+        // Initialization status (critical for editors like Zed)
+        let init_status = self.get_initialization_status();
+        let is_initialized = init_status
+            .get("is_initialized")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let indexed_repos = init_status
+            .get("indexed_repos")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let total_repos = init_status
+            .get("total_repos")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let progress = init_status
+            .get("progress_percentage")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+
+        output.push_str("## Initialization Status\n\n");
+        output.push_str(&format!(
+            "- **Status**: {}\n",
+            if is_initialized {
+                "✓ Complete"
+            } else {
+                "⏳ In Progress"
+            }
+        ));
+        output.push_str(&format!(
+            "- **Progress**: {}/{} repositories ({}%)\n\n",
+            indexed_repos, total_repos, progress
+        ));
 
         let stats = self.search_index.stats();
         output.push_str(&format!("**Total Documents**: {}\n", stats.total_documents));
