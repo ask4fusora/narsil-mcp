@@ -66,7 +66,33 @@ A Rust-powered MCP (Model Context Protocol) server providing AI assistants with 
 
 ## Installation
 
-### One-Click Install
+### Via Package Managers (Recommended)
+
+**macOS / Linux (Homebrew):**
+```bash
+brew tap postrv/narsil
+brew install narsil-mcp
+```
+
+**Windows (Scoop):**
+```powershell
+scoop bucket add narsil https://github.com/postrv/scoop-narsil
+scoop install narsil-mcp
+```
+
+**Arch Linux (AUR):**
+```bash
+yay -S narsil-mcp-bin  # Binary release (faster)
+# or
+yay -S narsil-mcp      # Build from source
+```
+
+**Rust/Cargo (all platforms):**
+```bash
+cargo install narsil-mcp
+```
+
+### One-Click Install Script
 
 **macOS / Linux:**
 ```bash
@@ -130,6 +156,8 @@ cargo build --release --target wasm32-unknown-unknown --features wasm
 | `neural` | + TF-IDF vector search, API embeddings | ~32MB |
 | `neural-onnx` | + Local ONNX model inference | ~50MB |
 | `wasm` | Browser build (no file system, git) | ~3MB |
+
+> **For detailed installation instructions, troubleshooting, and platform-specific guides**, see [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Usage
 

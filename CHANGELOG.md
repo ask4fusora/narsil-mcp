@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2025-12-28
+
+### Added
+
+- **Package manager distribution** - Making installation easier across all platforms:
+  - **Homebrew tap** for macOS/Linux (`brew install postrv/narsil/narsil-mcp`)
+  - **crates.io** publishing automated in release workflow (`cargo install narsil-mcp`)
+  - **AUR packages** for Arch Linux (`narsil-mcp` and `narsil-mcp-bin`)
+  - **Scoop bucket** for Windows (`scoop install narsil-mcp`)
+- **GitHub releases** now include versioned tarballs (`.tar.gz` for Unix, `.zip` for Windows)
+- **SHA256 checksums** generated for all release artifacts
+- **Comprehensive installation guide** (`docs/INSTALL.md`) with platform-specific instructions
+
+### Changed
+
+- Release workflow now creates versioned tarballs instead of individual binaries
+- `install.sh` updated to download versioned tarballs with proper extraction
+
+### Fixed
+
+- Windows CI test failure (`test_claude_code_path`) - now handles both `HOME` and `USERPROFILE` env vars
+- Tree-sitter query warnings for TypeScript/TSX (changed `identifier` to `type_identifier` for class names)
+- Tree-sitter query warning for Kotlin (removed unsupported `interface_declaration` node)
+- Neural API key warning message now suggests running `narsil-mcp config init --neural` for better user experience
+- Version string in startup logs now uses `CARGO_PKG_VERSION` instead of hardcoded value
+
 ## [1.1.0] - 2025-12-28
 
 ### 🎯 Major Features - Tool Selection & Configuration System
