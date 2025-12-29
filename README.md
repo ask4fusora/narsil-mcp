@@ -560,6 +560,38 @@ function calc(x) {
 
 > **Note for Zed**: narsil-mcp now starts immediately and indexes in the background, preventing initialization timeouts.
 
+### Claude Code Plugin
+
+For **Claude Code** users, we provide a plugin with slash commands and a skill for effective tool usage.
+
+**Install via Marketplace (Recommended):**
+```shell
+# Add the narsil-mcp marketplace
+/plugin marketplace add postrv/narsil-mcp
+
+# Install the plugin
+/plugin install narsil@narsil-mcp
+```
+
+**Or install directly from GitHub:**
+```shell
+/plugin install github:postrv/narsil-mcp/narsil-plugin
+```
+
+**What's included:**
+
+| Component | Description |
+|-----------|-------------|
+| `/narsil:security-scan` | Run comprehensive security audits |
+| `/narsil:explore` | Explore unfamiliar codebases |
+| `/narsil:analyze-function` | Deep dive on specific functions |
+| `/narsil:find-feature` | Find where features are implemented |
+| `/narsil:supply-chain` | Analyze supply chain security |
+| **Skill** | Guides Claude on using 76 tools effectively |
+| **MCP Config** | Auto-starts narsil-mcp with sensible defaults |
+
+See [narsil-plugin/README.md](narsil-plugin/README.md) for full documentation.
+
 ### Playbooks & Tutorials
 
 See **[docs/playbooks](docs/playbooks/)** for practical usage guides:
